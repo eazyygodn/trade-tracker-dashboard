@@ -602,31 +602,15 @@ function renderSetup(){
     <div style="background:var(--card);border:1px solid rgba(16,217,138,.25);border-radius:14px;padding:22px;margin-bottom:14px">
       <div style="font-size:16px;font-weight:600;margin-bottom:6px">Step 2 — Download and run the installer</div>
       <div style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6">The installer automatically finds your MT4/MT5, installs the EA, and opens a visual guide. <strong style="color:var(--text)">No technical knowledge needed.</strong></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
-        <a href="${BAT}" download style="text-decoration:none">
-          <div style="background:rgba(79,142,247,.1);border:1px solid rgba(79,142,247,.3);border-radius:10px;padding:16px;text-align:center;cursor:pointer">
-            <div style="font-size:28px;margin-bottom:7px">⬇</div>
-            <div style="font-size:13px;font-weight:600;color:var(--blue);margin-bottom:3px">Download Installer</div>
-            <div style="font-size:11px;color:var(--muted)">Install Trade Tracker Pro.bat</div>
-          </div>
-        </a>
-        <a href="${PS1}" download style="text-decoration:none">
-          <div style="background:rgba(255,255,255,.03);border:1px solid var(--b);border-radius:10px;padding:16px;text-align:center;cursor:pointer">
-            <div style="font-size:28px;margin-bottom:7px">📄</div>
-            <div style="font-size:13px;font-weight:600;margin-bottom:3px">Installer Script</div>
-            <div style="font-size:11px;color:var(--muted)">TradeTrackerPro_Installer.ps1</div>
+      <div style="text-align:center;margin-bottom:14px">
+        <a href="/TradeTrackerPro_Installer.zip" download="TradeTrackerPro_Installer.zip" style="text-decoration:none;display:inline-block">
+          <div style="background:linear-gradient(135deg,rgba(79,142,247,.15),rgba(16,217,138,.08));border:1px solid rgba(79,142,247,.35);border-radius:12px;padding:24px 48px;cursor:pointer;transition:.2s">
+            <div style="font-size:36px;margin-bottom:10px">&#11015;</div>
+            <div style="font-size:16px;font-weight:700;color:var(--blue);margin-bottom:4px">Download Installer (.zip)</div>
+            <div style="font-size:12px;color:var(--muted)">Contains both files needed - extract and run install.bat</div>
           </div>
         </a>
       </div>
-      <div style="background:var(--card2);border-radius:9px;padding:13px;font-size:13px;color:var(--muted);line-height:1.9">
-        <div style="font-weight:500;color:var(--text);margin-bottom:5px">How to install:</div>
-        <div>1. Download <strong style="color:var(--text)">both files</strong> into the same folder</div>
-        <div>2. <strong style="color:var(--text)">Double-click</strong> "Install Trade Tracker Pro.bat"</div>
-        <div>3. Paste your <strong style="color:var(--text)">API key</strong> when asked</div>
-        <div>4. Installer finds MT4/MT5 automatically and opens a visual guide</div>
-        <div>5. Follow 3 quick visual steps — done!</div>
-      </div>
-    </div>
     <div class="ib g"><strong>✓ Once installed</strong> — every trade appears here automatically. No manual input ever.</div>
     <div class="ib b" style="margin-top:8px"><strong>On your phone?</strong> Open this dashboard in any mobile browser — trades sync in real time.</div>
     <div style="background:rgba(247,195,90,.06);border:0.5px solid var(--amber);border-left:3px solid var(--amber);border-radius:9px;padding:13px 15px;margin-top:8px;font-size:13px;color:#f9dfa0;line-height:1.65"><strong>Windows only.</strong> The installer works on Windows 10 and 11.</div>
