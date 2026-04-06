@@ -588,9 +588,12 @@ function renderApiKeys(){
 function renderSetup(){
   const el=document.getElementById('tab-setup'),hasKey=apiKeys.length>0;
   const MEDIAFIRE_URL='https://drive.google.com/uc?export=download&id=1V4D9BqREvOzxjpQXWkCa6QjtavDdn7-H';
-  const keyHtml=hasKey
-    ? '<div class="ib g" style="margin:0"><strong>✓ API key already generated.</strong> Copy it from the API Keys tab and paste it in Step 4 below.</div>'
-    : '<button class="btn-p" onclick="go(\'apikeys\',null)" style="font-size:14px;padding:10px 24px">Generate API key first →</button>';
+  const lastKey=sessionStorage.getItem('ttp_last_key')||'';
+  const keyHtml=!hasKey
+    ? '<button class="btn-p" onclick="go(\'apikeys\',null)" style="font-size:14px;padding:10px 24px">Generate API key first →</button>'
+    : lastKey
+      ? '<div class="ib g" style="margin:0"><strong>✓ Your API key is ready — copy it now:</strong><br><div style="background:#0d0d1e;border:1px solid rgba(16,217,138,.25);border-radius:8px;padding:10px;font-family:var(--m);font-size:11px;color:var(--green);word-break:break-all;margin-top:8px;line-height:1.6">' + lastKey + '</div><button class="btn-p" onclick="navigator.clipboard.writeText(\''+lastKey+'\').then(()=>toast(\'API key copied!\',\'ok\'))" style="margin-top:8px;font-size:13px;padding:8px 20px">Copy API key</button><div style="font-size:11px;color:var(--muted);margin-top:6px">Save this key — it is only shown once. Paste it in Step 4.</div></div>'
+      : '<div class="ib b" style="margin:0"><strong>API key generated.</strong> But it can only be shown once — if you need a new one, go to <span onclick="go(\'apikeys\',null)" style="color:var(--blue);cursor:pointer;text-decoration:underline">API Keys tab</span> and generate a fresh key. It will appear here.</div>';
 
   const steps=[
     {n:'1',title:'Generate your API key',color:'rgba(79,142,247,.25)',body:keyHtml},
@@ -614,7 +617,9 @@ async function genKey(){
   await loadApiKeys();
   document.getElementById('key-area').innerHTML=`<div class="kw2" style="margin-top:14px"><strong>This key is shown ONCE.</strong> Copy it now and save it — we cannot show it again.</div><div class="kr">${rawKey}</div><div style="display:flex;align-items:center;gap:8px;margin-top:9px"><button class="btn-p" onclick="copyText('${rawKey}','kc')" style="font-size:13px">Copy API key</button><span id="kc" style="font-size:12px;color:var(--green);display:none">Copied!</span></div>`;
   document.getElementById('key-list').innerHTML=apiKeys.map(k=>`<div class="ki"><div><div class="kp">${k.key_prefix}...(hidden)</div><div class="km">${k.name} - ${(k.created_at||'').slice(0,10)} - Last used: ${k.last_used_at?k.last_used_at.slice(0,10):'never'}</div></div><button class="btn-d" onclick="revokeKey('${k.id}')">Revoke</button></div>`).join('');
+  sessionStorage.setItem('ttp_last_key', rawKey);
   toast('API key generated','ok');
+  if(tab==='setup') renderSetup();
 }
 async function revokeKey(id){
   if(!confirm('Revoke this key? The EA using it will stop syncing immediately.'))return;
