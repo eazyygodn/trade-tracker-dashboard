@@ -587,34 +587,22 @@ function renderApiKeys(){
 }
 function renderSetup(){
   const el=document.getElementById('tab-setup'),hasKey=apiKeys.length>0;
-  const BAT='/install.bat';
-  const PS1='/installer.ps1';
+  const MEDIAFIRE_URL='https://drive.google.com/uc?export=download&id=1V4D9BqREvOzxjpQXWkCa6QjtavDdn7-H';
   const keyHtml=hasKey
-    ? '<div class="ib g" style="margin:0"><strong>✓ API key already generated.</strong> Use it in the installer below.</div>'
-    : '<button class="btn-p" onclick="go(\'apikeys\',null)" style="font-size:14px;padding:10px 24px">Go to API Keys → Generate key</button>';
-  el.innerHTML=`<div class="ob-wrap">
-    <div class="ob-hero"><div class="ob-ico">⚡</div><div class="ob-t">Connect your MT4 or MT5</div><div class="ob-s">Two steps — takes 5 minutes. No technical knowledge needed.</div></div>
-    <div style="background:var(--card);border:1px solid rgba(79,142,247,.25);border-radius:14px;padding:22px;margin-bottom:14px">
-      <div style="font-size:16px;font-weight:600;margin-bottom:6px">Step 1 — Generate your API key</div>
-      <div style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6">Your API key links your MT4/MT5 to your account securely.</div>
-      ${keyHtml}
-    </div>
-    <div style="background:var(--card);border:1px solid rgba(16,217,138,.25);border-radius:14px;padding:22px;margin-bottom:14px">
-      <div style="font-size:16px;font-weight:600;margin-bottom:6px">Step 2 — Download and run the installer</div>
-      <div style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6">The installer automatically finds your MT4/MT5, installs the EA, and opens a visual guide. <strong style="color:var(--text)">No technical knowledge needed.</strong></div>
-      <div style="text-align:center;margin-bottom:14px">
-        <a href="https://drive.google.com/uc?export=download&id=1V4D9BqREvOzxjpQXWkCa6QjtavDdn7-H" style="text-decoration:none;display:inline-block">
-          <div style="background:linear-gradient(135deg,rgba(79,142,247,.15),rgba(16,217,138,.08));border:1px solid rgba(79,142,247,.35);border-radius:12px;padding:24px 48px;cursor:pointer;transition:.2s">
-            <div style="font-size:36px;margin-bottom:10px">&#11015;</div>
-            <div style="font-size:16px;font-weight:700;color:var(--blue);margin-bottom:4px">Download Installer (.zip)</div>
-            <div style="font-size:12px;color:var(--muted)">Contains both files needed - extract and run install.bat</div>
-          </div>
-        </a>
-      </div>
-    <div class="ib g"><strong>✓ Once installed</strong> — every trade appears here automatically. No manual input ever.</div>
-    <div class="ib b" style="margin-top:8px"><strong>On your phone?</strong> Open this dashboard in any mobile browser — trades sync in real time.</div>
-    <div style="background:rgba(247,195,90,.06);border:0.5px solid var(--amber);border-left:3px solid var(--amber);border-radius:9px;padding:13px 15px;margin-top:8px;font-size:13px;color:#f9dfa0;line-height:1.65"><strong>Windows only.</strong> The installer works on Windows 10 and 11.</div>
-  </div>`;
+    ? '<div class="ib g" style="margin:0"><strong>✓ API key already generated.</strong> Copy it from the API Keys tab and paste it in Step 4 below.</div>'
+    : '<button class="btn-p" onclick="go(\'apikeys\',null)" style="font-size:14px;padding:10px 24px">Generate API key first →</button>';
+
+  const steps=[
+    {n:'1',title:'Generate your API key',color:'rgba(79,142,247,.25)',body:keyHtml},
+    {n:'2',title:'Download the installer',color:'rgba(16,217,138,.25)',body:`<a href="${MEDIAFIRE_URL}" target="_blank" style="text-decoration:none;display:block"><div style="background:rgba(16,217,138,.1);border:1px solid rgba(16,217,138,.3);border-radius:10px;padding:18px;text-align:center;cursor:pointer"><div style="font-size:32px;margin-bottom:8px">&#11015;</div><div style="font-size:15px;font-weight:700;color:var(--green)">Download TradeTrackerPro_Installer.zip</div><div style="font-size:12px;color:var(--muted);margin-top:4px">Click here to download</div></div></a>`},
+    {n:'3',title:'Extract the zip file',color:'rgba(247,195,90,.2)',body:`<div style="font-size:13px;color:var(--muted);line-height:1.9"><div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--b)"><div style="width:24px;height:24px;background:rgba(247,195,90,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--amber);flex-shrink:0">1</div><div>Find the downloaded zip file in your <strong style="color:var(--text)">Downloads folder</strong></div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--b)"><div style="width:24px;height:24px;background:rgba(247,195,90,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--amber);flex-shrink:0">2</div><div><strong style="color:var(--text)">Right-click</strong> the zip file</div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--b)"><div style="width:24px;height:24px;background:rgba(247,195,90,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--amber);flex-shrink:0">3</div><div>Click <strong style="color:var(--text)">"Extract All"</strong></div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 0"><div style="width:24px;height:24px;background:rgba(247,195,90,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--amber);flex-shrink:0">4</div><div>Click <strong style="color:var(--text)">Extract</strong> — a new folder opens</div></div></div>`},
+    {n:'4',title:'Run the installer',color:'rgba(79,142,247,.25)',body:`<div style="font-size:13px;color:var(--muted);line-height:1.9"><div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--b)"><div style="width:24px;height:24px;background:rgba(79,142,247,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--blue);flex-shrink:0">1</div><div>Open the extracted folder</div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--b)"><div style="width:24px;height:24px;background:rgba(79,142,247,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--blue);flex-shrink:0">2</div><div><strong style="color:var(--text)">Double-click install.bat</strong> — a black window opens</div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--b)"><div style="width:24px;height:24px;background:rgba(79,142,247,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--blue);flex-shrink:0">3</div><div>A graphical installer window appears — <strong style="color:var(--text)">paste your API key</strong> and click Next</div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 0"><div style="width:24px;height:24px;background:rgba(79,142,247,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--blue);flex-shrink:0">4</div><div>Installer finds MT4/MT5 automatically — click <strong style="color:var(--text)">Install</strong></div></div></div>`},
+    {n:'5',title:'Follow the visual guide',color:'rgba(16,217,138,.25)',body:`<div style="font-size:13px;color:var(--muted);line-height:1.6">After installation, a <strong style="color:var(--text)">visual guide opens automatically</strong> in your browser showing exactly what to click in MT4/MT5. Follow the 3 steps shown — takes about 60 seconds.<br><br>Once done, open a small test trade in MT4/MT5 and watch it appear here automatically within seconds.</div>`},
+  ];
+
+  el.innerHTML='<div class="ob-wrap"><div class="ob-hero"><div class="ob-ico">⚡</div><div class="ob-t">Connect your MT4 or MT5</div><div class="ob-s">Follow these 5 steps — takes about 5 minutes total.</div></div>'+
+  steps.map(s=>`<div style="background:var(--card);border:1px solid ${s.color};border-radius:14px;padding:20px;margin-bottom:12px"><div style="display:flex;align-items:center;gap:12px;margin-bottom:12px"><div style="width:32px;height:32px;border-radius:50%;background:${s.color};display:flex;align-items:center;justify-content:center;font-family:var(--d);font-size:15px;font-weight:700;flex-shrink:0">${s.n}</div><div style="font-size:16px;font-weight:600">Step ${s.n} — ${s.title}</div></div>${s.body}</div>`).join('')+
+  '<div class="ib g" style="margin-top:4px"><strong>You are done!</strong> Every trade you open or close in MT4/MT5 will appear here automatically.</div><div class="ib b" style="margin-top:8px"><strong>On your phone?</strong> Open this dashboard URL in any mobile browser — it works on all devices.</div><div style="background:rgba(247,195,90,.06);border-left:3px solid var(--amber);border-radius:9px;padding:12px 14px;margin-top:8px;font-size:13px;color:#f9dfa0"><strong>Windows only.</strong> The installer works on Windows 10 and 11. Mac users — contact support.</div></div>';
 }
 async function genKey(){
   const bytes=crypto.getRandomValues(new Uint8Array(32));
