@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trade Tracker Pro — Final Setup</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#080810;color:#e8e8f0;font-family:'Segoe UI',sans-serif;font-size:15px;line-height:1.6;min-height:100vh;padding-bottom:60px}
+.header{background:linear-gradient(135deg,rgba(79,142,247,.15),rgba(16,217,138,.08));border-bottom:1px solid rgba(255,255,255,.08);padding:28px 40px;text-align:center}
+.logo{font-size:28px;font-weight:800;background:linear-gradient(135deg,#fff,#4f8ef7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
+.header-sub{font-size:15px;color:#6b6b8a}
+.progress-bar{height:4px;background:#16162a;position:relative}
+.progress-fill{height:100%;background:linear-gradient(90deg,#4f8ef7,#10d98a);transition:width .5s;width:0%}
+.main{max-width:760px;margin:0 auto;padding:40px 20px}
+
+/* STEP CARDS */
+.step-card{background:#11111f;border:1px solid rgba(255,255,255,.07);border-radius:16px;margin-bottom:20px;overflow:hidden;transition:.3s}
+.step-card.active{border-color:rgba(79,142,247,.4);box-shadow:0 0 40px rgba(79,142,247,.08)}
+.step-card.done{border-color:rgba(16,217,138,.3)}
+.step-card.locked{opacity:.4;pointer-events:none}
+.step-header{display:flex;align-items:center;gap:16px;padding:20px 24px;cursor:pointer}
+.step-num{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0;transition:.3s}
+.step-num.pending{background:rgba(255,255,255,.06);color:#6b6b8a;border:1px solid rgba(255,255,255,.1)}
+.step-num.active{background:rgba(79,142,247,.15);color:#4f8ef7;border:1px solid rgba(79,142,247,.3)}
+.step-num.done{background:rgba(16,217,138,.15);color:#10d98a;border:1px solid rgba(16,217,138,.3)}
+.step-title{font-size:17px;font-weight:600;flex:1}
+.step-badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600}
+.badge-active{background:rgba(79,142,247,.12);color:#4f8ef7}
+.badge-done{background:rgba(16,217,138,.12);color:#10d98a}
+.badge-pending{background:rgba(255,255,255,.05);color:#6b6b8a}
+.step-body{padding:0 24px 24px;display:none}
+.step-body.show{display:block}
+.step-time{font-size:12px;color:#6b6b8a;margin-bottom:16px}
+
+/* VISUAL MOCKUPS */
+.mt-mockup{background:#1a1a2e;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:16px;margin:16px 0;position:relative;overflow:visible}
+.mt-topbar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#0f0f1e;border-radius:7px;margin-bottom:12px;border:1px solid rgba(255,255,255,.06)}
+.mt-menubar{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px}
+.mt-menu{padding:4px 10px;font-size:12px;color:#6b6b8a;border-radius:4px;cursor:default}
+.mt-menu.highlight{background:rgba(79,142,247,.2);color:#4f8ef7;border:1px solid rgba(79,142,247,.3);font-weight:600;animation:glow 1.5s ease-in-out infinite}
+@keyframes glow{0%,100%{box-shadow:0 0 8px rgba(79,142,247,.4)}50%{box-shadow:0 0 20px rgba(79,142,247,.7)}}
+.mt-content{display:flex;gap:10px;height:120px}
+.mt-sidebar{width:160px;background:#0d0d1e;border-radius:6px;padding:8px;flex-shrink:0}
+.mt-nav-item{font-size:11px;color:#6b6b8a;padding:4px 8px;border-radius:4px;cursor:default;display:flex;align-items:center;gap:6px}
+.mt-nav-item.hl{background:rgba(79,142,247,.15);color:#4f8ef7;font-weight:600;border:1px solid rgba(79,142,247,.25)}
+.mt-nav-item.ea-item{background:rgba(16,217,138,.1);color:#10d98a;font-weight:600;border:1px solid rgba(16,217,138,.25);animation:pulse2 1.5s infinite}
+@keyframes pulse2{0%,100%{opacity:1}50%{opacity:.6}}
+.mt-chart{flex:1;background:#0a0a18;border-radius:6px;display:flex;align-items:center;justify-content:center}
+.arrow{font-size:28px;color:#4f8ef7;animation:bounce 1s ease-in-out infinite;display:inline-block}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.arrow-right{animation:bounceR 1s ease-in-out infinite}
+@keyframes bounceR{0%,100%{transform:translateX(0)}50%{transform:translateX(6px)}}
+
+/* DIALOG MOCKUPS */
+.dialog-mockup{background:#1c1c30;border:1px solid rgba(255,255,255,.15);border-radius:10px;max-width:420px;margin:16px auto;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.dialog-title-bar{background:#14142a;border-bottom:1px solid rgba(255,255,255,.08);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;border-radius:10px 10px 0 0}
+.dialog-title{font-size:13px;font-weight:600;color:#e8e8f0}
+.dialog-x{color:#6b6b8a;font-size:14px}
+.dialog-body{padding:16px}
+.dialog-tabs{display:flex;gap:4px;margin-bottom:14px}
+.dialog-tab{padding:6px 14px;border-radius:6px;font-size:12px;color:#6b6b8a;cursor:default;border:1px solid transparent}
+.dialog-tab.active{background:rgba(79,142,247,.12);color:#4f8ef7;border-color:rgba(79,142,247,.25);font-weight:600}
+.dialog-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.dialog-lbl{font-size:11px;color:#6b6b8a;width:100px;flex-shrink:0}
+.dialog-val{font-size:12px;color:#e8e8f0;font-family:Consolas,monospace;background:#0d0d1e;border:1px solid rgba(255,255,255,.1);border-radius:5px;padding:4px 8px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dialog-val.hl{border-color:rgba(79,142,247,.4);color:#4f8ef7}
+.dialog-val.paste-target{border-color:rgba(16,217,138,.4);color:#10d98a;animation:highlight 2s ease-in-out infinite}
+@keyframes highlight{0%,100%{background:#0d0d1e}50%{background:rgba(16,217,138,.06)}}
+.checkbox-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.checkbox{width:14px;height:14px;border-radius:3px;border:2px solid;flex-shrink:0}
+.checkbox.checked{background:rgba(16,217,138,.2);border-color:#10d98a}
+.checkbox.hl-check{background:rgba(79,142,247,.2);border-color:#4f8ef7;animation:glow2 1.5s infinite}
+@keyframes glow2{0%,100%{box-shadow:0 0 5px rgba(79,142,247,.4)}50%{box-shadow:0 0 14px rgba(79,142,247,.8)}}
+.checkbox-lbl{font-size:12px;color:#e8e8f0}
+.dialog-btns{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+.dbtn{padding:6px 16px;border-radius:6px;font-size:12px;cursor:default}
+.dbtn.ok{background:#4f8ef7;color:#fff;font-weight:600}
+.dbtn.cancel{background:#16162a;color:#6b6b8a;border:1px solid rgba(255,255,255,.1)}
+.dbtn.ok.hl{animation:btnGlow 1.5s infinite}
+@keyframes btnGlow{0%,100%{box-shadow:0 0 10px rgba(79,142,247,.4)}50%{box-shadow:0 0 24px rgba(79,142,247,.8)}}
+
+/* TOOLBAR MOCKUP */
+.toolbar-mock{background:#0f0f1e;border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:8px;margin:12px 0;border:1px solid rgba(255,255,255,.08)}
+.tb-btn{width:32px;height:28px;border-radius:4px;background:#16162a;border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:11px;color:#6b6b8a;cursor:default;flex-shrink:0}
+.tb-btn.algo-off{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:#f05068}
+.tb-btn.algo-on{background:rgba(16,217,138,.15);border-color:rgba(16,217,138,.4);color:#10d98a;font-weight:700;animation:pulse3 1.5s infinite}
+@keyframes pulse3{0%,100%{box-shadow:0 0 8px rgba(16,217,138,.3)}50%{box-shadow:0 0 20px rgba(16,217,138,.6)}}
+.tb-sep{width:1px;height:20px;background:rgba(255,255,255,.08)}
+.tb-label{font-size:11px;color:#6b6b8a}
+
+/* COPY BOX */
+.copy-box{background:#16162a;border:1px solid rgba(79,142,247,.25);border-radius:8px;padding:12px 14px;font-family:Consolas,monospace;font-size:12px;color:#4f8ef7;word-break:break-all;line-height:1.6;position:relative;margin:12px 0}
+.copy-btn{position:absolute;top:8px;right:8px;background:#4f8ef7;color:#fff;border:none;border-radius:5px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:'Segoe UI',sans-serif}
+.copy-btn:hover{opacity:.85}
+.copy-btn.copied{background:#10d98a}
+
+/* DONE BUTTON */
+.btn-done{display:block;width:100%;max-width:400px;margin:32px auto 0;background:linear-gradient(135deg,#4f8ef7,#10d98a);border:none;border-radius:12px;padding:16px;color:#fff;font-size:18px;font-weight:700;cursor:pointer;font-family:'Segoe UI',sans-serif;transition:.2s;box-shadow:0 8px 32px rgba(79,142,247,.3)}
+.btn-done:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(79,142,247,.4)}
+
+/* NEXT BTN */
+.btn-next{background:#4f8ef7;border:none;border-radius:9px;padding:11px 28px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;margin-top:16px;font-family:'Segoe UI',sans-serif;transition:.2s}
+.btn-next:hover{opacity:.88;transform:translateY(-1px)}
+
+/* INFO BOX */
+.ib{border-radius:9px;padding:12px 14px;margin:12px 0;border-left:3px solid;font-size:13px;line-height:1.65}
+.ib.green{background:rgba(16,217,138,.06);border-color:#10d98a;color:#a0f0d4}
+.ib.amber{background:rgba(247,195,90,.06);border-color:#f7c35a;color:#f9dfa0}
+.ib.blue{background:rgba(79,142,247,.07);border-color:#4f8ef7;color:#a8c8ff}
+.ib strong{font-weight:600}
+
+.tip{font-size:13px;color:#6b6b8a;line-height:1.7;margin-bottom:12px}
+.tip strong{color:#e8e8f0;font-weight:500}
+
+/* API KEY DISPLAY */
+.api-key-box{background:#0d0d1e;border:1px solid rgba(16,217,138,.25);border-radius:8px;padding:12px 14px;font-family:Consolas,monospace;font-size:11px;color:#10d98a;word-break:break-all;line-height:1.6;position:relative;margin:10px 0}
+
+/* CONFETTI / SUCCESS */
+.success-section{text-align:center;padding:40px 20px;background:#11111f;border:1px solid rgba(16,217,138,.25);border-radius:16px;margin-top:20px}
+.success-icon{font-size:56px;margin-bottom:16px}
+.success-title{font-size:28px;font-weight:800;color:#10d98a;margin-bottom:10px}
+.success-sub{font-size:15px;color:#6b6b8a;max-width:460px;margin:0 auto 24px;line-height:1.65}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">Trade Tracker Pro</div>
+  <div class="header-sub">EA installed ✓ — 3 quick steps left inside MT4/MT5 (takes 60 seconds)</div>
+</div>
+<div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+
+<div class="main">
+
+  <div class="ib blue" style="margin-bottom:24px">
+    <strong>Your API key and URL are already saved.</strong> You just need to paste them into MT4/MT5 settings below. Follow each step — click "Done" when finished.
+  </div>
+
+  <!-- STEP 1 -->
+  <div class="step-card active" id="card-1">
+    <div class="step-header" onclick="toggleCard(1)">
+      <div class="step-num active" id="num-1">1</div>
+      <div class="step-title">Restart MT5 and attach the EA to a chart</div>
+      <span class="step-badge badge-active" id="badge-1">Do this now</span>
+    </div>
+    <div class="step-body show" id="body-1">
+      <div class="step-time">⏱ About 20 seconds</div>
+      <div class="tip">First, <strong>close MT5 completely</strong> and reopen it so it detects the new EA file.</div>
+
+      <div class="mt-mockup">
+        <div class="mt-topbar">
+          <span style="font-size:12px;color:#4f8ef7;font-weight:600">MetaTrader 5</span>
+          <span style="font-size:11px;color:#6b6b8a;margin-left:auto">EURUSD, H1</span>
+        </div>
+        <div class="mt-menubar">
+          <div class="mt-menu">File</div><div class="mt-menu">View</div><div class="mt-menu">Insert</div><div class="mt-menu">Charts</div><div class="mt-menu">Tools</div><div class="mt-menu">Help</div>
+        </div>
+        <div class="mt-content">
+          <div class="mt-sidebar">
+            <div class="mt-nav-item" style="font-size:10px;color:#3a3a5c;margin-bottom:4px">NAVIGATOR</div>
+            <div class="mt-nav-item">📁 Indicators</div>
+            <div class="mt-nav-item hl">📁 Expert Advisors</div>
+            <div class="mt-nav-item ea-item" style="margin-left:12px;font-size:10px">⚡ TradeTrackerPro_MT5</div>
+          </div>
+          <div class="mt-chart">
+            <div style="text-align:center">
+              <div style="font-size:12px;color:#6b6b8a;margin-bottom:8px">Double-click the EA</div>
+              <div class="arrow">↙</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tip" style="margin-top:8px">
+        1. Press <strong>Ctrl+N</strong> to open the Navigator panel (left side)<br>
+        2. Click the arrow next to <strong>Expert Advisors</strong> to expand it<br>
+        3. <strong>Double-click TradeTrackerPro_MT5</strong> — a settings window will open
+      </div>
+
+      <button class="btn-next" onclick="completeStep(1)">Done — settings window opened ✓</button>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="step-card locked" id="card-2">
+    <div class="step-header" onclick="toggleCard(2)">
+      <div class="step-num pending" id="num-2">2</div>
+      <div class="step-title">Paste your API key and URL into the settings</div>
+      <span class="step-badge badge-pending" id="badge-2">Up next</span>
+    </div>
+    <div class="step-body" id="body-2">
+      <div class="step-time">⏱ About 30 seconds</div>
+      <div class="tip">In the settings window that just opened, do this:</div>
+
+      <!-- Common tab -->
+      <div class="dialog-mockup">
+        <div class="dialog-title-bar">
+          <div class="dialog-title">TradeTrackerPro_MT5 — Settings</div>
+          <div class="dialog-x">✕</div>
+        </div>
+        <div class="dialog-body">
+          <div class="dialog-tabs">
+            <div class="dialog-tab active">Common</div>
+            <div class="dialog-tab">Inputs</div>
+          </div>
+          <div class="checkbox-row">
+            <div class="checkbox hl-check checked"></div>
+            <div class="checkbox-lbl"><strong>Allow Algo Trading</strong> ← check this box</div>
+          </div>
+          <div class="checkbox-row">
+            <div class="checkbox checked" style="border-color:#6b6b8a"></div>
+            <div class="checkbox-lbl" style="color:#6b6b8a">Allow live trading</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tip" style="margin:12px 0 6px">Then click the <strong>Inputs</strong> tab:</div>
+
+      <div class="dialog-mockup">
+        <div class="dialog-title-bar">
+          <div class="dialog-title">TradeTrackerPro_MT5 — Settings</div>
+          <div class="dialog-x">✕</div>
+        </div>
+        <div class="dialog-body">
+          <div class="dialog-tabs">
+            <div class="dialog-tab">Common</div>
+            <div class="dialog-tab active">Inputs</div>
+          </div>
+          <div class="dialog-row">
+            <div class="dialog-lbl">ApiKey</div>
+            <div class="dialog-val paste-target">← paste your API key here</div>
+          </div>
+          <div class="dialog-row">
+            <div class="dialog-lbl">EdgeFunctionUrl</div>
+            <div class="dialog-val paste-target">← paste the URL here</div>
+          </div>
+          <div class="dialog-btns">
+            <div class="dbtn cancel">Cancel</div>
+            <div class="dbtn ok hl">OK</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tip" style="margin-top:14px">Your API key (from dashboard):</div>
+      <div class="api-key-box" id="apikey-display">
+        <span id="apikey-text">Loading your API key...</span>
+      </div>
+
+      <div class="tip" style="margin-top:10px">Edge Function URL:</div>
+      <div class="copy-box" id="url-box">
+        https://vuxsxdirrwmbqntvkywi.supabase.co/functions/v1/trade-tracker
+        <button class="copy-btn" onclick="copyUrl()">Copy</button>
+      </div>
+
+      <div class="ib amber"><strong>Then click OK</strong> to close the settings window and attach the EA to the chart.</div>
+
+      <button class="btn-next" onclick="completeStep(2)">Done — API key and URL pasted, clicked OK ✓</button>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="step-card locked" id="card-3">
+    <div class="step-header" onclick="toggleCard(3)">
+      <div class="step-num pending" id="num-3">3</div>
+      <div class="step-title">Allow web requests & enable Auto Trading</div>
+      <span class="step-badge badge-pending" id="badge-3">Last step</span>
+    </div>
+    <div class="step-body" id="body-3">
+      <div class="step-time">⏱ About 20 seconds</div>
+
+      <div class="tip">In MT5, click <strong>Tools</strong> in the menu bar → click <strong>Options</strong>:</div>
+
+      <div class="mt-mockup">
+        <div class="mt-menubar">
+          <div class="mt-menu">File</div><div class="mt-menu">View</div><div class="mt-menu">Insert</div><div class="mt-menu">Charts</div>
+          <div class="mt-menu highlight">Tools ▼</div>
+          <div class="mt-menu">Help</div>
+        </div>
+        <div style="background:#0d0d1e;border-radius:6px;padding:6px;width:160px;margin-left:120px">
+          <div style="padding:6px 10px;font-size:12px;color:#6b6b8a">New Order</div>
+          <div style="padding:6px 10px;font-size:12px;color:#6b6b8a">History Center</div>
+          <div style="padding:6px 10px;font-size:12px;color:#4f8ef7;font-weight:600;background:rgba(79,142,247,.1);border-radius:4px">Options ← click this</div>
+        </div>
+      </div>
+
+      <div class="tip" style="margin-top:14px">In Options, click the <strong>Expert Advisors</strong> tab:</div>
+
+      <div class="dialog-mockup">
+        <div class="dialog-title-bar">
+          <div class="dialog-title">Options</div>
+          <div class="dialog-x">✕</div>
+        </div>
+        <div class="dialog-body">
+          <div class="dialog-tabs" style="flex-wrap:wrap">
+            <div class="dialog-tab">General</div>
+            <div class="dialog-tab">Charts</div>
+            <div class="dialog-tab">Trade</div>
+            <div class="dialog-tab active">Expert Advisors</div>
+            <div class="dialog-tab">Community</div>
+          </div>
+          <div class="checkbox-row">
+            <div class="checkbox hl-check checked"></div>
+            <div class="checkbox-lbl"><strong>Allow WebRequests for listed URL</strong> ← check this</div>
+          </div>
+          <div class="dialog-row" style="margin-left:22px">
+            <div class="dialog-val paste-target" style="font-size:11px">https://vuxsxdirrwmbqntvkywi.supabase.co ← paste this URL, press Enter</div>
+          </div>
+          <div class="dialog-btns">
+            <div class="dbtn cancel">Cancel</div>
+            <div class="dbtn ok hl">OK</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="copy-box" style="font-size:12px">
+        https://vuxsxdirrwmbqntvkywi.supabase.co
+        <button class="copy-btn" onclick="copyBase()">Copy</button>
+      </div>
+
+      <div class="tip" style="margin-top:14px">Finally — find this button in the MT5 toolbar and click it until it turns <strong style="color:#10d98a">green</strong>:</div>
+
+      <div class="toolbar-mock">
+        <div class="tb-btn">📊</div>
+        <div class="tb-btn">+</div>
+        <div class="tb-sep"></div>
+        <div class="tb-btn algo-off" id="algo-btn" onclick="clickAlgo()" style="cursor:pointer;min-width:100px;padding:0 8px;font-size:11px" title="Click to see it turn green">
+          <span id="algo-text">Algo Trading</span>
+        </div>
+        <div class="tb-sep"></div>
+        <div class="tb-btn">💹</div>
+        <div class="tb-btn">📰</div>
+        <div class="tb-label" style="margin-left:8px;font-size:11px">← click Algo Trading until it turns green</div>
+      </div>
+
+      <div class="ib green" style="margin-top:12px"><strong>Once it's green — you're done!</strong> Every trade you open or close in MT5 will automatically appear in your dashboard.</div>
+
+      <button class="btn-next" onclick="completeStep(3)" style="background:linear-gradient(135deg,#4f8ef7,#10d98a)">All done — Algo Trading is green ✓</button>
+    </div>
+  </div>
+
+  <!-- SUCCESS -->
+  <div id="success-section" style="display:none">
+    <div class="success-section">
+      <div class="success-icon">🚀</div>
+      <div class="success-title">You're fully connected!</div>
+      <div class="success-sub">Trade Tracker Pro is now watching your MT5. Every trade you open or close will appear in your dashboard automatically — no manual input, ever.</div>
+      <button class="btn-done" onclick="window.open('https://rad-nasturtium-8cb612.netlify.app')">Open my dashboard →</button>
+    </div>
+
+    <div class="ib blue" style="margin-top:20px">
+      <strong>Test it:</strong> Place any small trade in MT5 (even a micro lot). Then open your dashboard and watch it appear in the Trades tab within a few seconds. If it doesn't appear after 30 seconds, check that Algo Trading is still green in MT5.
+    </div>
+  </div>
+
+</div>
+
+<script>
+// Read API key from URL param or localStorage
+const params = new URLSearchParams(window.location.search);
+const apiKey = params.get('key') || localStorage.getItem('ttp_installer_key') || '';
+if (apiKey) {
+  const el = document.getElementById('apikey-text');
+  if (el) el.textContent = apiKey;
+  // Also save it
+  localStorage.setItem('ttp_installer_key', apiKey);
+} else {
+  const el = document.getElementById('apikey-text');
+  if (el) el.textContent = 'Go to your dashboard → API Keys tab → copy your key and paste it here manually';
+  document.getElementById('apikey-display').style.color = '#f7c35a';
+}
+
+let completedSteps = 0;
+
+function completeStep(n) {
+  // Mark step done
+  document.getElementById('num-'+n).className = 'step-num done';
+  document.getElementById('num-'+n).textContent = '✓';
+  document.getElementById('badge-'+n).className = 'step-badge badge-done';
+  document.getElementById('badge-'+n).textContent = 'Complete ✓';
+  document.getElementById('card-'+n).className = 'step-card done';
+  document.getElementById('body-'+n).classList.remove('show');
+
+  completedSteps++;
+  updateProgress();
+
+  // Unlock next step
+  const next = n + 1;
+  if (next <= 3) {
+    document.getElementById('card-'+next).className = 'step-card active';
+    document.getElementById('num-'+next).className = 'step-num active';
+    document.getElementById('badge-'+next).className = 'step-badge badge-active';
+    document.getElementById('badge-'+next).textContent = 'Do this now';
+    document.getElementById('body-'+next).classList.add('show');
+    document.getElementById('card-'+next).scrollIntoView({behavior:'smooth', block:'start'});
+  } else {
+    document.getElementById('success-section').style.display = 'block';
+    document.getElementById('success-section').scrollIntoView({behavior:'smooth'});
+  }
+}
+
+function toggleCard(n) {
+  const body = document.getElementById('body-'+n);
+  body.classList.toggle('show');
+}
+
+function updateProgress() {
+  const pct = (completedSteps / 3) * 100;
+  document.getElementById('progress').style.width = pct + '%';
+}
+
+function copyUrl() {
+  const url = 'https://vuxsxdirrwmbqntvkywi.supabase.co/functions/v1/trade-tracker';
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = event.target;
+    btn.textContent = 'Copied!';
+    btn.className = 'copy-btn copied';
+    setTimeout(() => { btn.textContent = 'Copy'; btn.className = 'copy-btn'; }, 2000);
+  });
+}
+
+function copyBase() {
+  navigator.clipboard.writeText('https://vuxsxdirrwmbqntvkywi.supabase.co').then(() => {
+    const btn = event.target;
+    btn.textContent = 'Copied!';
+    btn.className = 'copy-btn copied';
+    setTimeout(() => { btn.textContent = 'Copy'; btn.className = 'copy-btn'; }, 2000);
+  });
+}
+
+let algoOn = false;
+function clickAlgo() {
+  algoOn = !algoOn;
+  const btn = document.getElementById('algo-btn');
+  const txt = document.getElementById('algo-text');
+  btn.className = algoOn ? 'tb-btn algo-on' : 'tb-btn algo-off';
+  txt.textContent = algoOn ? 'Algo Trading ●' : 'Algo Trading';
+}
+</script>
+</body>
+</html>
