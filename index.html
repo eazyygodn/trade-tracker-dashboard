@@ -467,11 +467,17 @@ function saveGoals(){goals.a=parseFloat(document.getElementById('g-a').value)||0
 
 function calc(t){
   const e=+t.entry_price,sl=+t.stop_loss,tp=+t.take_profit,lo=+t.lots||1;
-  const isB=t.direction==='buy',risk=isB?e-sl:sl-e;
-  const rr=risk>0?(isB?tp-e:e-tp)/risk:0;
+  const isB=t.direction==='buy';
+  const risk=sl>0?(isB?e-sl:sl-e):0;
+  const reward=tp>0?(isB?tp-e:e-tp):0;
+  const rr=(risk>0&&reward>0)?reward/risk:0;
   let pnl=null,status='open';
-  if(t.exit_price!=null){pnl=t.profit!=null?+t.profit:(isB?(+t.exit_price-e)*lo:(e-+t.exit_price)*lo);const tol=Math.abs(risk)*0.05;status=pnl>tol?'win':pnl<-tol?'loss':'be';}
-  const rp=goals.a>0?(Math.abs(risk*lo)/goals.a*100):0;
+  if(t.exit_price!=null){
+    pnl=t.profit!=null?+t.profit:(isB?(+t.exit_price-e)*lo:(e-+t.exit_price)*lo);
+    const tol=risk>0?Math.abs(risk)*0.05:0.01;
+    status=pnl>tol?'win':pnl<-tol?'loss':'be';
+  }
+  const rp=goals.a>0&&risk>0?(Math.abs(risk*lo)/goals.a*100):0;
   return{rr,pnl,status,rp};
 }
 function getStats(){
@@ -511,7 +517,7 @@ function sb2(s){return`<span class="badge ${s}">${s}</span>`}
 function renderTrades(){
   const el=document.getElementById('tab-trades');
   if(!trades.length){el.innerHTML=`<div class="es"><div class="ei">📊</div><div class="et">No trades yet</div><div class="ed">Connect your MT4/MT5 EA to auto-log trades, or add one manually.</div><div class="eb"><button class="btn-p" onclick="go('setup',null)">⚡ Setup guide</button><button class="btn" onclick="toggleForm()">+ Log manually</button></div></div>`;return;}
-  el.innerHTML=`<div class="tw"><table><thead><tr><th>Date</th><th>Symbol</th><th>Dir</th><th>Entry</th><th>Exit</th><th>R:R</th><th>Risk%</th><th>P&L</th><th>Grade</th><th>Mood</th><th>Result</th><th></th></tr></thead><tbody>${[...trades].map(t=>{const{rr,pnl,status,rp}=calc(t);const pc=pnl==null?'':pnl>=0?'color:var(--green)':'color:var(--red)';const rpc=rp>2?'color:var(--red)':rp>1?'color:var(--amber)':'';return`<tr class="tr${selId===t.id?' sel':''}" onclick="selectTrade('${t.id}')"><td>${(t.open_time||'').slice(0,10)}</td><td style="font-weight:600">${t.symbol||''}</td><td class="${t.direction}">${t.direction}</td><td>${fmt(+t.entry_price)}</td><td>${t.exit_price!=null?fmt(+t.exit_price):'—'}</td><td><div style="display:flex;align-items:center;gap:4px"><span>${rr.toFixed(2)}</span><div style="height:3px;width:${Math.min(rr*11,40).toFixed(0)}px;background:var(--green);border-radius:2px"></div></div></td><td style="${rpc}">${rp>0?rp.toFixed(1)+'%':'—'}</td><td style="${pc}">${pnl!=null?(pnl>=0?'+':'')+'$'+Math.abs(pnl).toFixed(2):'—'}</td><td>${gb(t.grade)}</td><td>${eb(t.emotion)}</td><td>${sb2(status)}</td><td><button class="btn-x" onclick="event.stopPropagation();delTrade('${t.id}')">×</button></td></tr>`;}).join('')}</tbody></table></div>`;
+  el.innerHTML=`<div class="tw"><table><thead><tr><th>Date</th><th>Symbol</th><th>Dir</th><th>Entry</th><th>Exit</th><th>R:R</th><th>Risk%</th><th>P&L</th><th>Grade</th><th>Mood</th><th>Result</th><th></th></tr></thead><tbody>${[...trades].map(t=>{const{rr,pnl,status,rp}=calc(t);const pc=pnl==null?'':pnl>=0?'color:var(--green)':'color:var(--red)';const rpc=rp>2?'color:var(--red)':rp>1?'color:var(--amber)':'';return`<tr class="tr${selId===t.id?' sel':''}" onclick="selectTrade('${t.id}')"><td>${(t.open_time||'').slice(0,10)}</td><td style="font-weight:600">${t.symbol||''}</td><td class="${t.direction}">${t.direction}</td><td>${fmt(+t.entry_price)}</td><td>${t.exit_price!=null?fmt(+t.exit_price):'—'}</td><td><div style="display:flex;align-items:center;gap:4px"><span>${rr>0?rr.toFixed(2):'—'}</span>${rr>0?`<div style="height:3px;width:${Math.min(rr*11,40).toFixed(0)}px;background:var(--green);border-radius:2px"></div>`:''}</div></td><td style="${rpc}">${rp>0?rp.toFixed(1)+'%':'—'}</td><td style="${pc}">${pnl!=null?(pnl>=0?'+':'')+'$'+Math.abs(pnl).toFixed(2):'—'}</td><td>${gb(t.grade)}</td><td>${eb(t.emotion)}</td><td>${sb2(status)}</td><td><button class="btn-x" onclick="event.stopPropagation();delTrade('${t.id}')">×</button></td></tr>`;}).join('')}</tbody></table></div>`;
 }
 function selectTrade(id){
   selId=selId===id?null:id;renderTrades();
@@ -606,26 +612,94 @@ function renderApiKeys(){
     </div>`;
 }
 function renderSetup(){
-  const el=document.getElementById('tab-setup'),hasKey=apiKeys.length>0;
-  const MEDIAFIRE_URL='https://drive.google.com/uc?export=download&id=1V4D9BqREvOzxjpQXWkCa6QjtavDdn7-H';
+  const el=document.getElementById('tab-setup');
+  const hasKey=apiKeys.length>0;
+  const uid=user?user.id:'';
   const lastKey=sessionStorage.getItem('ttp_last_key')||'';
-  const keyHtml=!hasKey
-    ? '<button class="btn-p" onclick="go(\'apikeys\',null)" style="font-size:14px;padding:10px 24px">Generate API key first →</button>'
+  const GDRIVE='https://drive.google.com/uc?export=download&id=1V4D9BqREvOzxjpQXWkCa6QjtavDdn7-H';
+
+  const step=( n, color, icon, title, body)=>`
+    <div style="background:var(--card);border:1px solid ${color};border-radius:14px;padding:22px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+        <div style="width:36px;height:36px;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;font-family:var(--d);flex-shrink:0;color:var(--text)">${n}</div>
+        <div style="font-size:16px;font-weight:600">${icon} ${title}</div>
+      </div>
+      ${body}
+    </div>`;
+
+  const apiKeyBody = !hasKey
+    ? `<div style="font-size:13px;color:var(--muted);margin-bottom:12px">Go to the API Keys tab, generate a key, and come back here.</div>
+       <button class="btn-p" onclick="go('apikeys',null)" style="font-size:13px">Go to API Keys tab →</button>`
     : lastKey
-      ? '<div class="ib g" style="margin:0"><strong>✓ Your API key is ready — copy it now:</strong><br><div style="background:#0d0d1e;border:1px solid rgba(16,217,138,.25);border-radius:8px;padding:10px;font-family:var(--m);font-size:11px;color:var(--green);word-break:break-all;margin-top:8px;line-height:1.6">' + lastKey + '</div><button class="btn-p" onclick="navigator.clipboard.writeText(\''+lastKey+'\').then(()=>toast(\'API key copied!\',\'ok\'))" style="margin-top:8px;font-size:13px;padding:8px 20px">Copy API key</button><div style="font-size:11px;color:var(--muted);margin-top:6px">Save this key — it is only shown once. Paste it in Step 4.</div></div>'
-      : '<div class="ib b" style="margin:0"><strong>API key generated.</strong> But it can only be shown once — if you need a new one, go to <span onclick="go(\'apikeys\',null)" style="color:var(--blue);cursor:pointer;text-decoration:underline">API Keys tab</span> and generate a fresh key. It will appear here.</div>';
+      ? `<div style="font-size:13px;color:var(--muted);margin-bottom:10px">Your API key — copy it and paste it into the installer:</div>
+         <div style="background:#0a0a18;border:1px solid rgba(16,217,138,.3);border-radius:8px;padding:12px;font-family:var(--m);font-size:11px;color:var(--green);word-break:break-all;line-height:1.7;margin-bottom:10px">${lastKey}</div>
+         <div style="display:flex;gap:8px;align-items:center">
+           <button class="btn-p" onclick="navigator.clipboard.writeText('${lastKey}').then(()=>toast('API key copied!','ok'))" style="font-size:13px">Copy API key</button>
+           <span style="font-size:11px;color:var(--muted)">Save it — only shown once</span>
+         </div>`
+      : `<div class="ib b" style="margin:0"><strong>API key already generated.</strong> Need a new one? <span onclick="go('apikeys',null)" style="color:var(--blue);cursor:pointer;text-decoration:underline">Go to API Keys tab</span> — the new key will appear here.</div>`;
 
-  const steps=[
-    {n:'1',title:'Generate your API key',color:'rgba(79,142,247,.25)',body:keyHtml},
-    {n:'2',title:'Download the installer',color:'rgba(16,217,138,.25)',body:`<a href="${MEDIAFIRE_URL}" target="_blank" style="text-decoration:none;display:block"><div style="background:rgba(16,217,138,.1);border:1px solid rgba(16,217,138,.3);border-radius:10px;padding:18px;text-align:center;cursor:pointer"><div style="font-size:32px;margin-bottom:8px">&#11015;</div><div style="font-size:15px;font-weight:700;color:var(--green)">Download TradeTrackerPro_Installer.zip</div><div style="font-size:12px;color:var(--muted);margin-top:4px">Click here to download</div></div></a>`},
-    {n:'3',title:'Extract the zip file',color:'rgba(247,195,90,.2)',body:`<div style="font-size:13px;color:var(--muted);line-height:1.9"><div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--b)"><div style="width:24px;height:24px;background:rgba(247,195,90,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--amber);flex-shrink:0">1</div><div>Find the downloaded zip file in your <strong style="color:var(--text)">Downloads folder</strong></div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--b)"><div style="width:24px;height:24px;background:rgba(247,195,90,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--amber);flex-shrink:0">2</div><div><strong style="color:var(--text)">Right-click</strong> the zip file</div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--b)"><div style="width:24px;height:24px;background:rgba(247,195,90,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--amber);flex-shrink:0">3</div><div>Click <strong style="color:var(--text)">"Extract All"</strong></div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 0"><div style="width:24px;height:24px;background:rgba(247,195,90,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--amber);flex-shrink:0">4</div><div>Click <strong style="color:var(--text)">Extract</strong> — a new folder opens</div></div></div>`},
-    {n:'4',title:'Run the installer',color:'rgba(79,142,247,.25)',body:`<div style="font-size:13px;color:var(--muted);line-height:1.9"><div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--b)"><div style="width:24px;height:24px;background:rgba(79,142,247,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--blue);flex-shrink:0">1</div><div>Open the extracted folder</div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--b)"><div style="width:24px;height:24px;background:rgba(79,142,247,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--blue);flex-shrink:0">2</div><div><strong style="color:var(--text)">Double-click install.bat</strong> — a black window opens</div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--b)"><div style="width:24px;height:24px;background:rgba(79,142,247,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--blue);flex-shrink:0">3</div><div>A graphical installer window appears — <strong style="color:var(--text)">paste your API key</strong> and click Next</div></div><div style="display:flex;align-items:center;gap:10px;padding:8px 0"><div style="width:24px;height:24px;background:rgba(79,142,247,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--blue);flex-shrink:0">4</div><div>Installer finds MT4/MT5 automatically — click <strong style="color:var(--text)">Install</strong></div></div></div>`},
-    {n:'5',title:'Follow the visual guide',color:'rgba(16,217,138,.25)',body:`<div style="font-size:13px;color:var(--muted);line-height:1.6">After installation, a <strong style="color:var(--text)">visual guide opens automatically</strong> in your browser showing exactly what to click in MT4/MT5. Follow the 3 steps shown — takes about 60 seconds.<br><br>Once done, open a small test trade in MT4/MT5 and watch it appear here automatically within seconds.</div>`},
-  ];
+  const userIdBody = `
+    <div style="font-size:13px;color:var(--muted);margin-bottom:10px">Your User ID — copy it and paste it into the installer:</div>
+    <div class="cu" id="setup-uid">${uid}</div>
+    <div style="display:flex;gap:8px;align-items:center;margin-top:10px">
+      <button class="btn-p" onclick="copyText(document.getElementById('setup-uid').textContent,'suid-c')" style="font-size:13px">Copy User ID</button>
+      <span id="suid-c" style="font-size:11px;color:var(--green);display:none">Copied!</span>
+    </div>`;
 
-  el.innerHTML='<div class="ob-wrap"><div class="ob-hero"><div class="ob-ico">⚡</div><div class="ob-t">Connect your MT4 or MT5</div><div class="ob-s">Follow these 5 steps — takes about 5 minutes total.</div></div>'+
-  steps.map(s=>`<div style="background:var(--card);border:1px solid ${s.color};border-radius:14px;padding:20px;margin-bottom:12px"><div style="display:flex;align-items:center;gap:12px;margin-bottom:12px"><div style="width:32px;height:32px;border-radius:50%;background:${s.color};display:flex;align-items:center;justify-content:center;font-family:var(--d);font-size:15px;font-weight:700;flex-shrink:0">${s.n}</div><div style="font-size:16px;font-weight:600">Step ${s.n} — ${s.title}</div></div>${s.body}</div>`).join('')+
-  '<div class="ib g" style="margin-top:4px"><strong>You are done!</strong> Every trade you open or close in MT4/MT5 will appear here automatically.</div><div class="ib b" style="margin-top:8px"><strong>On your phone?</strong> Open this dashboard URL in any mobile browser — it works on all devices.</div><div style="background:rgba(247,195,90,.06);border-left:3px solid var(--amber);border-radius:9px;padding:12px 14px;margin-top:8px;font-size:13px;color:#f9dfa0"><strong>Windows only.</strong> The installer works on Windows 10 and 11. Mac users — contact support.</div></div>';
+  const downloadBody = `
+    <div style="font-size:13px;color:var(--muted);margin-bottom:14px">Download the installer — it automatically finds your MT4/MT5 and sets everything up.</div>
+    <a href="${GDRIVE}" target="_blank" style="text-decoration:none;display:block">
+      <div style="background:rgba(16,217,138,.08);border:1px solid rgba(16,217,138,.25);border-radius:10px;padding:18px;text-align:center;cursor:pointer;transition:.2s" onmouseover="this.style.borderColor='rgba(16,217,138,.5)'" onmouseout="this.style.borderColor='rgba(16,217,138,.25)'">
+        <div style="font-size:32px;margin-bottom:8px">&#11015;</div>
+        <div style="font-size:15px;font-weight:700;color:var(--green)">Download TradeTrackerPro_Installer.zip</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">Windows 10 & 11 only</div>
+      </div>
+    </a>`;
+
+  const extractBody = `
+    <div style="font-size:13px;color:var(--muted);line-height:2">
+      <div style="padding:7px 0;border-bottom:1px solid var(--b)">1. Find the zip in your <strong style="color:var(--text)">Downloads folder</strong></div>
+      <div style="padding:7px 0;border-bottom:1px solid var(--b)">2. <strong style="color:var(--text)">Right-click</strong> the zip file</div>
+      <div style="padding:7px 0;border-bottom:1px solid var(--b)">3. Click <strong style="color:var(--text)">"Extract All"</strong></div>
+      <div style="padding:7px 0">4. Click <strong style="color:var(--text)">Extract</strong> — a new folder opens</div>
+    </div>`;
+
+  const runBody = `
+    <div style="font-size:13px;color:var(--muted);line-height:2">
+      <div style="padding:7px 0;border-bottom:1px solid var(--b)">1. Open the extracted folder</div>
+      <div style="padding:7px 0;border-bottom:1px solid var(--b)">2. <strong style="color:var(--text)">Double-click install.bat</strong></div>
+      <div style="padding:7px 0;border-bottom:1px solid var(--b)">3. Paste your <strong style="color:var(--text)">API key</strong> when asked</div>
+      <div style="padding:7px 0;border-bottom:1px solid var(--b)">4. Paste your <strong style="color:var(--text)">User ID</strong> when asked</div>
+      <div style="padding:7px 0">5. Installer finds MT4/MT5 automatically — click <strong style="color:var(--text)">Install</strong></div>
+    </div>`;
+
+  const mtBody = `
+    <div style="font-size:13px;color:var(--muted);line-height:2">
+      <div style="padding:7px 0;border-bottom:1px solid var(--b)">1. <strong style="color:var(--text)">Restart MT4/MT5</strong> completely</div>
+      <div style="padding:7px 0;border-bottom:1px solid var(--b)">2. Press <strong style="color:var(--text)">Ctrl+N</strong> to open Navigator</div>
+      <div style="padding:7px 0;border-bottom:1px solid var(--b)">3. Find <strong style="color:var(--text)">TradeTrackerPro_MT5_v3</strong> under Expert Advisors</div>
+      <div style="padding:7px 0;border-bottom:1px solid var(--b)">4. <strong style="color:var(--text)">Drag it onto your chart</strong></div>
+      <div style="padding:7px 0;border-bottom:1px solid var(--b)">5. Common tab: check <strong style="color:var(--text)">Allow Algo Trading</strong> → click OK</div>
+      <div style="padding:7px 0">6. Make sure <strong style="color:var(--green)">Algo Trading</strong> button in toolbar is green</div>
+    </div>`;
+
+  el.innerHTML=`<div class="ob-wrap">
+    <div class="ob-hero">
+      <div class="ob-ico">⚡</div>
+      <div class="ob-t">Connect MT4 or MT5</div>
+      <div class="ob-s">Follow all 6 steps in order. Takes about 5 minutes.</div>
+    </div>
+    ${step(1,'rgba(79,142,247,.25)','🔑','Generate your API key', apiKeyBody)}
+    ${step(2,'rgba(123,92,240,.25)','👤','Copy your User ID', userIdBody)}
+    ${step(3,'rgba(16,217,138,.25)','⬇','Download the installer', downloadBody)}
+    ${step(4,'rgba(247,195,90,.25)','📦','Extract the zip', extractBody)}
+    ${step(5,'rgba(79,142,247,.25)','▶','Run the installer', runBody)}
+    ${step(6,'rgba(16,217,138,.25)','📊','Attach EA to chart in MT4/MT5', mtBody)}
+    <div class="ib g" style="margin-top:4px"><strong>Done!</strong> Every trade you open or close will appear here automatically. Open a small test trade to confirm.</div>
+    <div class="ib b" style="margin-top:8px"><strong>On your phone?</strong> Open this dashboard URL in any mobile browser — it works on all devices.</div>
+    <div style="background:rgba(247,195,90,.06);border-left:3px solid var(--amber);border-radius:9px;padding:12px 14px;margin-top:8px;font-size:13px;color:#f9dfa0"><strong>Windows only.</strong> Mac users — contact support for manual setup.</div>
+  </div>`;
 }
 async function genKey(){
   const bytes=crypto.getRandomValues(new Uint8Array(32));
