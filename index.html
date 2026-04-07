@@ -583,7 +583,27 @@ function updRoR(){
 }
 function renderApiKeys(){
   const el=document.getElementById('tab-apikeys');
-  el.innerHTML=`<div class="kw"><div class="kwt">Your API Keys</div><div class="kws">Each key connects one MT4/MT5 terminal to your account. Keys are stored as encrypted hashes — the real key is never saved on our servers. Keep it private.</div><div id="key-list">${!apiKeys.length?'<div style="color:var(--muted);font-size:13px;margin-bottom:14px;padding:13px;background:var(--card2);border-radius:9px;border:1px solid var(--b)">No keys yet — generate one below</div>':apiKeys.map(k=>`<div class="ki"><div><div class="kp">${k.key_prefix}...(hidden)</div><div class="km">${k.name} - Created ${(k.created_at||'').slice(0,10)} - Last used: ${k.last_used_at?(k.last_used_at||'').slice(0,10):'never'}</div></div><button class="btn-d" onclick="revokeKey('${k.id}')">Revoke</button></div>`).join('')}</div><button class="btn-p" onclick="genKey()">+ Generate new API key</button><div id="key-area"></div></div><div class="kw"><div class="kwt">Edge Function URL</div><div class="kws">Paste this into your MT4/MT5 EA settings alongside your API key:</div><div class="cu" id="ef-url">${EF}</div><div style="display:flex;align-items:center;gap:8px;margin-top:10px"><button class="btn" onclick="copyText(document.getElementById('ef-url').textContent,'ef-c')" style="font-size:12px">Copy URL</button><span id="ef-c" style="font-size:11px;color:var(--green);display:none">Copied!</span></div></div>`;
+  const uid=user.id;
+  const keyList=!apiKeys.length
+    ?'<div style="color:var(--muted);font-size:13px;margin-bottom:14px;padding:13px;background:var(--card2);border-radius:9px;border:1px solid var(--b)">No keys yet - generate one below</div>'
+    :apiKeys.map(k=>`<div class="ki"><div><div class="kp">${k.key_prefix}...(hidden)</div><div class="km">${k.name} - Created ${(k.created_at||'').slice(0,10)} - Last used: ${k.last_used_at?k.last_used_at.slice(0,10):'never'}</div></div><button class="btn-d" onclick="revokeKey('${k.id}')">Revoke</button></div>`).join('');
+  el.innerHTML=`
+    <div class="kw">
+      <div class="kwt">Your User ID</div>
+      <div class="kws">Copy this and paste it into the installer when asked. You need it to link your MT4/MT5 to your account.</div>
+      <div class="cu" id="uid-box">${uid}</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
+        <button class="btn-p" onclick="copyText(document.getElementById('uid-box').textContent,'uid-c')" style="font-size:13px">Copy User ID</button>
+        <span id="uid-c" style="font-size:11px;color:var(--green);display:none">Copied!</span>
+      </div>
+    </div>
+    <div class="kw">
+      <div class="kwt">Your API Keys</div>
+      <div class="kws">Each key connects one MT4/MT5 terminal to your account. Keys are stored encrypted - the real key is never saved.</div>
+      <div id="key-list">${keyList}</div>
+      <button class="btn-p" onclick="genKey()">+ Generate new API key</button>
+      <div id="key-area"></div>
+    </div>`;
 }
 function renderSetup(){
   const el=document.getElementById('tab-setup'),hasKey=apiKeys.length>0;
