@@ -589,6 +589,73 @@ function renderApiKeys(){
     :apiKeys.map(k=>`<div class="ki"><div><div class="kp">${k.key_prefix}...(hidden)</div><div class="km">${k.name} - Created ${(k.created_at||'').slice(0,10)} - Last used: ${k.last_used_at?k.last_used_at.slice(0,10):'never'}</div></div><button class="btn-d" onclick="revokeKey('${k.id}')">Revoke</button></div>`).join('');
   el.innerHTML=`<div class="kw"><div class="kwt">Your User ID</div><div class="kws">Copy this and paste it into the installer when asked.</div><div class="cu" id="uid-box">${uid}</div><div style="display:flex;align-items:center;gap:8px;margin-top:10px"><button class="btn-p" onclick="copyText(document.getElementById('uid-box').textContent,'uid-c')" style="font-size:13px">Copy User ID</button><span id="uid-c" style="font-size:11px;color:var(--green);display:none">Copied!</span></div></div><div class="kw"><div class="kwt">Your API Keys</div><div class="kws">Each key connects one MT4/MT5 terminal to your account. Keys are stored as encrypted hashes - never saved in plain text.</div><div id="key-list">${keyList}</div><button class="btn-p" onclick="genKey()">+ Generate new API key</button><div id="key-area"></div></div>`;
 }
+
+
+function copyLastKey(){
+  const k=sessionStorage.getItem('ttp_last_key')||'';
+  if(k) navigator.clipboard.writeText(k).then(()=>toast('API key copied!','ok'));
+}
+function gotoApiKeys(){go('apikeys',null);}
+function gotoSetup(){go('setup',null);}
+function renderSetup(){
+  const el=document.getElementById('tab-setup');
+  const hasKey=apiKeys.length>0;
+  const uid=user?user.id:'';
+  const lastKey=sessionStorage.getItem('ttp_last_key')||'';
+  const GDRIVE='https://drive.google.com/uc?export=download&id=1V4D9BqREvOzxjpQXWkCa6QjtavDdn7-H';
+
+  let step1Body='';
+  if(!hasKey){
+    step1Body='<div style="font-size:13px;color:var(--muted);margin-bottom:12px">Go to API Keys tab, generate a key and come back here.</div><button class="btn-p" onclick="gotoApiKeys()" style="font-size:13px">Go to API Keys tab</button>';
+  } else if(lastKey){
+    step1Body=`<div style="font-size:13px;color:var(--muted);margin-bottom:10px">Your API key - copy it now:</div><div style="background:#0a0a18;border:1px solid rgba(16,217,138,.3);border-radius:8px;padding:12px;font-family:var(--m);font-size:11px;color:var(--green);word-break:break-all;line-height:1.7;margin-bottom:10px">${lastKey}</div><button class="btn-p" onclick="copyLastKey()" style="font-size:13px">Copy API key</button>`;
+  } else {
+    step1Body='<div class="ib b" style="margin:0"><strong>Key already generated.</strong> Need a new one? <span onclick="gotoApiKeys()" style="color:var(--blue);cursor:pointer;text-decoration:underline">Go to API Keys tab</span> and generate a fresh key.</div>';
+  }
+
+  const step2Body=`<div style="font-size:13px;color:var(--muted);margin-bottom:10px">You need this when running the installer:</div><div class="cu" id="setup-uid">${uid}</div><div style="display:flex;gap:8px;align-items:center;margin-top:10px"><button class="btn-p" onclick="copySetupUid()" style="font-size:13px">Copy User ID</button><span id="suid-c" style="font-size:11px;color:var(--green);display:none">Copied!</span></div>`;
+
+  const step3Body=`<a href="${GDRIVE}" target="_blank" style="text-decoration:none"><div style="background:rgba(16,217,138,.08);border:1px solid rgba(16,217,138,.25);border-radius:9px;padding:16px;text-align:center;cursor:pointer"><div style="font-size:28px;margin-bottom:6px">&#11015;</div><div style="font-size:14px;font-weight:700;color:var(--green)">Download TradeTrackerPro_Installer.zip</div><div style="font-size:12px;color:var(--muted);margin-top:3px">Windows 10 and 11 only</div></div></a>`;
+
+  const step4Body='<div style="font-size:13px;color:var(--muted);line-height:2"><div style="padding:5px 0;border-bottom:1px solid var(--b)">1. Find the zip in your <strong style="color:var(--text)">Downloads folder</strong></div><div style="padding:5px 0;border-bottom:1px solid var(--b)">2. <strong style="color:var(--text)">Right-click</strong> it</div><div style="padding:5px 0;border-bottom:1px solid var(--b)">3. Click <strong style="color:var(--text)">Extract All</strong></div><div style="padding:5px 0">4. Click <strong style="color:var(--text)">Extract</strong> - a new folder opens</div></div>';
+
+  const step5Body='<div style="font-size:13px;color:var(--muted);line-height:2"><div style="padding:5px 0;border-bottom:1px solid var(--b)">1. Open the extracted folder</div><div style="padding:5px 0;border-bottom:1px solid var(--b)">2. <strong style="color:var(--text)">Double-click install.bat</strong></div><div style="padding:5px 0;border-bottom:1px solid var(--b)">3. Paste your <strong style="color:var(--text)">API key</strong> when asked</div><div style="padding:5px 0;border-bottom:1px solid var(--b)">4. Paste your <strong style="color:var(--text)">User ID</strong> when asked</div><div style="padding:5px 0">5. Click <strong style="color:var(--text)">Install</strong></div></div>';
+
+  const step6Body='<div style="font-size:13px;color:var(--muted);line-height:2"><div style="padding:5px 0;border-bottom:1px solid var(--b)">1. <strong style="color:var(--text)">Restart MT4/MT5</strong></div><div style="padding:5px 0;border-bottom:1px solid var(--b)">2. Press <strong style="color:var(--text)">Ctrl+N</strong> to open Navigator</div><div style="padding:5px 0;border-bottom:1px solid var(--b)">3. Find <strong style="color:var(--text)">TradeTrackerPro_MT5_v3</strong> under Expert Advisors</div><div style="padding:5px 0;border-bottom:1px solid var(--b)">4. <strong style="color:var(--text)">Drag it onto your chart</strong></div><div style="padding:5px 0;border-bottom:1px solid var(--b)">5. Check <strong style="color:var(--text)">Allow Algo Trading</strong> and click OK</div><div style="padding:5px 0">6. Make sure <strong style="color:var(--green)">Algo Trading</strong> button is green</div></div>';
+
+  function makeStep(n,col,title,body){
+    return `<div style="background:var(--card);border:1px solid ${col};border-radius:12px;padding:18px;margin-bottom:10px"><div style="display:flex;align-items:center;gap:12px;margin-bottom:12px"><div style="width:32px;height:32px;border-radius:50%;background:${col};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;font-family:var(--d);flex-shrink:0;color:var(--text)">${n}</div><div style="font-size:15px;font-weight:600">${title}</div></div>${body}</div>`;
+  }
+
+  el.innerHTML=`<div style="padding:8px 0">
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="font-size:40px;margin-bottom:10px">⚡</div>
+      <div style="font-family:var(--d);font-size:24px;font-weight:800;background:linear-gradient(135deg,#fff,var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px">Connect MT4 or MT5</div>
+      <div style="font-size:13px;color:var(--muted)">Follow all 6 steps in order. Takes about 5 minutes.</div>
+    </div>
+    ${makeStep(1,'rgba(79,142,247,.3)','Generate your API key',step1Body)}
+    ${makeStep(2,'rgba(123,92,240,.3)','Copy your User ID',step2Body)}
+    ${makeStep(3,'rgba(16,217,138,.3)','Download the installer',step3Body)}
+    ${makeStep(4,'rgba(247,195,90,.3)','Extract the zip file',step4Body)}
+    ${makeStep(5,'rgba(79,142,247,.3)','Run the installer',step5Body)}
+    ${makeStep(6,'rgba(16,217,138,.3)','Attach EA to chart in MT4/MT5',step6Body)}
+    <div class="ib g" style="margin-top:6px"><strong>Done!</strong> Every trade you open or close in MT4/MT5 appears here automatically.</div>
+    <div class="ib b" style="margin-top:8px"><strong>On your phone?</strong> Open this dashboard URL in any mobile browser.</div>
+    <div style="background:rgba(247,195,90,.06);border-left:3px solid var(--amber);border-radius:9px;padding:12px 14px;margin-top:8px;font-size:13px;color:#f9dfa0"><strong>Windows only.</strong> Mac users contact support.</div>
+  </div>`;
+}
+
+function copySetupUid(){
+  const el=document.getElementById('setup-uid');
+  if(el) copyText(el.textContent,'suid-c');
+}
+
+function copyLastKey(){
+  const k=sessionStorage.getItem('ttp_last_key')||'';
+  if(k) navigator.clipboard.writeText(k).then(()=>toast('API key copied!','ok'));
+}
+function gotoApiKeys(){go('apikeys',null);}
+function gotoSetup(){go('setup',null);}
 async function genKey(){
   const bytes=crypto.getRandomValues(new Uint8Array(32));
   const rawKey=[...bytes].map(b=>b.toString(16).padStart(2,'0')).join('');
