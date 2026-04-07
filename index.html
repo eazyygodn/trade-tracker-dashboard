@@ -83,10 +83,10 @@ input,select,textarea,button{font-family:var(--f)}
 .lp{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);background:var(--card2);border:1px solid var(--b);border-radius:20px;padding:4px 10px}
 .ld{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.content{flex:1;padding:20px;min-width:0}
+.content{flex:1;padding:20px}
 @media(max-width:600px){.content{padding:14px}}
 
-.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:16px}
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(125px,1fr));gap:7px;margin-bottom:14px}
 .stat{background:var(--card);border:1px solid var(--b);border-radius:var(--r);padding:13px 15px;transition:.2s}
 .stat:hover{border-color:var(--b2)}
 .sl{font-size:10px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:5px}
@@ -94,7 +94,7 @@ input,select,textarea,button{font-family:var(--f)}
 .ss{font-size:11px;color:var(--muted);margin-top:2px;font-family:var(--m)}
 .pos{color:var(--green)}.neg{color:var(--red)}.info{color:var(--blue)}.warn{color:var(--amber)}
 
-.gc{background:var(--card);border:1px solid var(--b);border-radius:var(--r);padding:16px 20px;margin-bottom:14px;width:100%}
+.gc{background:var(--card);border:1px solid var(--b);border-radius:var(--r);padding:14px 16px;margin-bottom:14px}
 .gh{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px}
 .gt{font-size:13px;font-weight:500}
 .gi-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -110,10 +110,10 @@ input,select,textarea,button{font-family:var(--f)}
 .gm{font-size:11px;color:var(--muted);font-family:var(--m);margin-top:6px;padding-top:7px;border-top:1px solid var(--b)}
 .gm span{color:var(--text)}
 
-.tw{overflow-x:auto;border:1px solid var(--b);border-radius:var(--r);width:100%;display:block}
-table{border-collapse:collapse;font-size:12px}
-th{font-size:10px;color:var(--muted);font-weight:500;letter-spacing:.4px;padding:8px 10px;border-bottom:1px solid var(--b);text-align:left;white-space:nowrap;background:rgba(255,255,255,.015);text-transform:uppercase}
-td{padding:9px 10px;border-bottom:1px solid var(--b);font-family:var(--m);font-size:12px;white-space:nowrap}
+.tw{overflow-x:auto;border:1px solid var(--b);border-radius:var(--r)}
+table{border-collapse:collapse;font-size:12px;min-width:100%}
+th{font-size:10px;color:var(--muted);font-weight:500;letter-spacing:.4px;padding:8px 12px;border-bottom:1px solid var(--b);text-align:left;white-space:nowrap;background:rgba(255,255,255,.015);text-transform:uppercase}
+td{padding:9px 12px;border-bottom:1px solid var(--b);font-family:var(--m);font-size:12px;white-space:nowrap}
 tr:last-child td{border-bottom:none}
 tr.tr:hover td{background:rgba(255,255,255,.02);cursor:pointer}
 tr.tr.sel td{background:rgba(79,142,247,.06)}
@@ -137,7 +137,7 @@ tr.tr.sel td{background:rgba(79,142,247,.06)}
 .ea-row{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
 .ea-row select{background:var(--card2);border:1px solid var(--b2);border-radius:7px;padding:6px 9px;color:var(--text);font-size:12px;outline:none}
 
-.jc{background:var(--card);border:1px solid var(--b);border-radius:var(--r);padding:16px 18px;margin-bottom:10px;transition:.2s;width:100%}
+.jc{background:var(--card);border:1px solid var(--b);border-radius:var(--r);padding:13px 15px;margin-bottom:9px;transition:.2s}
 .jc:hover{border-color:var(--b2)}
 .jch{display:flex;align-items:center;gap:7px;margin-bottom:9px;flex-wrap:wrap}
 .jn{background:var(--card2);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--muted);line-height:1.65;white-space:pre-wrap}
@@ -147,11 +147,11 @@ tr.tr.sel td{background:rgba(79,142,247,.06)}
 .fc:hover{border-color:var(--b2);color:var(--text)}
 .fc.on{background:var(--bbg);border-color:rgba(79,142,247,.3);color:var(--blue)}
 
-.cn{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;width:100%}
+.cn{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .ct{font-family:var(--d);font-size:16px;font-weight:700}
-.cg{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:14px;width:100%}
+.cg{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:12px}
 .ch{font-size:10px;color:var(--muted);text-align:center;padding:4px;letter-spacing:.3px;text-transform:uppercase}
-.cd{border-radius:8px;padding:8px 4px;min-height:65px;display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--card2);border:1px solid transparent;transition:.15s}
+.cd{border-radius:7px;padding:5px 3px;min-height:50px;display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--card2);border:1px solid transparent;transition:.15s}
 .cd.empty{background:transparent;border-color:transparent}
 .cd.today{border-color:var(--blue)}
 .cd.hastr{cursor:pointer}.cd.hastr:hover{opacity:.78}
@@ -160,7 +160,7 @@ tr.tr.sel td{background:rgba(79,142,247,.06)}
 .cpnl{font-size:10px;font-weight:600;font-family:var(--m)}
 .cdd{background:var(--card);border:1px solid var(--b);border-radius:var(--r);padding:13px 15px;margin-top:10px}
 
-.ag{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:16px}
+.ag{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-bottom:12px}
 .ac{background:var(--card);border:1px solid var(--b);border-radius:var(--r);padding:13px 15px}
 .at{font-size:10px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:9px}
 .ar{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--b);font-size:13px}
@@ -176,12 +176,12 @@ tr.tr.sel td{background:rgba(79,142,247,.06)}
 .kw2{background:var(--abg);border:1px solid rgba(247,195,90,.2);border-radius:8px;padding:10px 13px;font-size:12px;color:var(--amber);margin-bottom:11px;line-height:1.6}
 .cu{background:var(--card2);border:1px solid var(--b);border-radius:8px;padding:10px 13px;font-family:var(--m);font-size:11px;color:var(--blue);word-break:break-all;line-height:1.6}
 
-.rc{display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:12px;margin-bottom:14px}
+.rc{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:12px}
 .rcard{background:var(--card);border:1px solid var(--b);border-radius:var(--r);padding:14px}
 .rn{font-size:30px;font-weight:700;font-family:var(--m);margin:7px 0 3px;letter-spacing:-1px}
 .rl{font-size:10px;color:var(--muted);letter-spacing:.4px;text-transform:uppercase}
 .rs{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.5}
-.sc{background:var(--card);border:1px solid var(--b);border-radius:var(--r);padding:20px}
+.sc{background:var(--card);border:1px solid var(--b);border-radius:var(--r);padding:16px}
 .sr{display:flex;align-items:center;gap:9px;margin-bottom:9px}
 .sl2{font-size:12px;color:var(--muted);width:115px;flex-shrink:0}
 .sv2{font-size:12px;font-family:var(--m);width:42px;text-align:right;color:var(--text)}
@@ -189,7 +189,7 @@ tr.tr.sel td{background:rgba(79,142,247,.06)}
 .si .rl2{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
 .si .rv{font-size:21px;font-weight:700;font-family:var(--m);margin-top:4px}
 
-.ptable{overflow-x:auto;border:1px solid var(--b);border-radius:var(--r);width:100%;display:block}
+.ptable{overflow-x:auto;border:1px solid var(--b);border-radius:var(--r)}
 
 .fc2{background:var(--card);border:1px solid var(--b2);border-radius:var(--r);padding:18px;margin-bottom:12px}
 .fs{font-size:10px;font-weight:600;color:var(--muted);letter-spacing:.6px;padding-bottom:9px;border-bottom:1px solid var(--b);margin-bottom:12px;text-transform:uppercase}
@@ -207,7 +207,7 @@ tr.tr.sel td{background:rgba(79,142,247,.06)}
 .ed{font-size:14px;color:var(--muted);line-height:1.65;max-width:380px;margin:0 auto 18px}
 .eb{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 
-.ob-wrap{max-width:100%;padding:16px 0}
+.ob-wrap{max-width:660px;margin:0 auto;padding:16px 0}
 .ob-hero{text-align:center;margin-bottom:36px}
 .ob-ico{font-size:44px;margin-bottom:14px}
 .ob-t{font-family:var(--d);font-size:28px;font-weight:800;margin-bottom:9px;background:linear-gradient(135deg,#fff,var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
@@ -467,17 +467,11 @@ function saveGoals(){goals.a=parseFloat(document.getElementById('g-a').value)||0
 
 function calc(t){
   const e=+t.entry_price,sl=+t.stop_loss,tp=+t.take_profit,lo=+t.lots||1;
-  const isB=t.direction==='buy';
-  const risk=sl>0?(isB?e-sl:sl-e):0;
-  const reward=tp>0?(isB?tp-e:e-tp):0;
-  const rr=(risk>0&&reward>0)?reward/risk:0;
+  const isB=t.direction==='buy',risk=isB?e-sl:sl-e;
+  const rr=risk>0?(isB?tp-e:e-tp)/risk:0;
   let pnl=null,status='open';
-  if(t.exit_price!=null){
-    pnl=t.profit!=null?+t.profit:(isB?(+t.exit_price-e)*lo:(e-+t.exit_price)*lo);
-    const tol=risk>0?Math.abs(risk)*0.05:0.01;
-    status=pnl>tol?'win':pnl<-tol?'loss':'be';
-  }
-  const rp=goals.a>0&&risk>0?(Math.abs(risk*lo)/goals.a*100):0;
+  if(t.exit_price!=null){pnl=t.profit!=null?+t.profit:(isB?(+t.exit_price-e)*lo:(e-+t.exit_price)*lo);const tol=Math.abs(risk)*0.05;status=pnl>tol?'win':pnl<-tol?'loss':'be';}
+  const rp=goals.a>0?(Math.abs(risk*lo)/goals.a*100):0;
   return{rr,pnl,status,rp};
 }
 function getStats(){
@@ -517,7 +511,7 @@ function sb2(s){return`<span class="badge ${s}">${s}</span>`}
 function renderTrades(){
   const el=document.getElementById('tab-trades');
   if(!trades.length){el.innerHTML=`<div class="es"><div class="ei">📊</div><div class="et">No trades yet</div><div class="ed">Connect your MT4/MT5 EA to auto-log trades, or add one manually.</div><div class="eb"><button class="btn-p" onclick="go('setup',null)">⚡ Setup guide</button><button class="btn" onclick="toggleForm()">+ Log manually</button></div></div>`;return;}
-  el.innerHTML=`<div class="tw"><table><thead><tr><th>Date</th><th>Symbol</th><th>Dir</th><th>Entry</th><th>Exit</th><th>R:R</th><th>Risk%</th><th>P&amp;L</th><th>Grade</th><th>Mood</th><th>Result</th><th></th></tr></thead><tbody>${[...trades].map(t=>{const{rr,pnl,status,rp}=calc(t);const pc=pnl==null?'':pnl>=0?'color:var(--green)':'color:var(--red)';const rpc=rp>2?'color:var(--red)':rp>1?'color:var(--amber)':'';return`<tr class="tr${selId===t.id?' sel':''}" onclick="selectTrade('${t.id}')"><td>${(t.open_time||'').slice(0,10)}</td><td style="font-weight:600">${t.symbol||''}</td><td class="${t.direction}">${t.direction}</td><td>${fmt(+t.entry_price)}</td><td>${t.exit_price!=null?fmt(+t.exit_price):'—'}</td><td><div style="display:flex;align-items:center;gap:4px"><span>${rr>0?rr.toFixed(2):'—'}</span>${rr>0?`<div style="height:3px;width:${Math.min(rr*11,40).toFixed(0)}px;background:var(--green);border-radius:2px"></div>`:''}</div></td><td style="${rpc}">${rp>0?rp.toFixed(1)+'%':'—'}</td><td style="${pc}">${pnl!=null?(pnl>=0?'+':'')+'$'+Math.abs(pnl).toFixed(2):'—'}</td><td>${gb(t.grade)}</td><td>${eb(t.emotion)}</td><td>${sb2(status)}</td><td><button class="btn-x" onclick="event.stopPropagation();delTrade('${t.id}')">×</button></td></tr>`;}).join('')}</tbody></table></div>`;
+  el.innerHTML=`<div class="tw"><table><thead><tr><th>Date</th><th>Symbol</th><th>Dir</th><th>Entry</th><th>Exit</th><th>R:R</th><th>Risk%</th><th>P&L</th><th>Grade</th><th>Mood</th><th>Result</th><th></th></tr></thead><tbody>${[...trades].map(t=>{const{rr,pnl,status,rp}=calc(t);const pc=pnl==null?'':pnl>=0?'color:var(--green)':'color:var(--red)';const rpc=rp>2?'color:var(--red)':rp>1?'color:var(--amber)':'';return`<tr class="tr${selId===t.id?' sel':''}" onclick="selectTrade('${t.id}')"><td>${(t.open_time||'').slice(0,10)}</td><td style="font-weight:600">${t.symbol||''}</td><td class="${t.direction}">${t.direction}</td><td>${fmt(+t.entry_price)}</td><td>${t.exit_price!=null?fmt(+t.exit_price):'—'}</td><td><div style="display:flex;align-items:center;gap:4px"><span>${rr.toFixed(2)}</span><div style="height:3px;width:${Math.min(rr*11,40).toFixed(0)}px;background:var(--green);border-radius:2px"></div></div></td><td style="${rpc}">${rp>0?rp.toFixed(1)+'%':'—'}</td><td style="${pc}">${pnl!=null?(pnl>=0?'+':'')+'$'+Math.abs(pnl).toFixed(2):'—'}</td><td>${gb(t.grade)}</td><td>${eb(t.emotion)}</td><td>${sb2(status)}</td><td><button class="btn-x" onclick="event.stopPropagation();delTrade('${t.id}')">×</button></td></tr>`;}).join('')}</tbody></table></div>`;
 }
 function selectTrade(id){
   selId=selId===id?null:id;renderTrades();
@@ -553,7 +547,7 @@ function renderAnalytics(){
   const el=document.getElementById('tab-analytics'),s=getStats();
   if(!s.closed){el.innerHTML=`<div class="es"><div class="ei">📈</div><div class="et">No data yet</div><div class="ed">Analytics appear once you have closed trades.</div></div>`;return;}
   const byM={},byG={A:{w:0,l:0,pnl:0},B:{w:0,l:0,pnl:0},C:{w:0,l:0,pnl:0},D:{w:0,l:0,pnl:0}};
-  s.calcs.forEach(c=>{const mkt=c.market||c.symbol?.includes('XAU')||c.symbol?.includes('XAG')?'metals':c.symbol?.includes('BTC')||c.symbol?.includes('ETH')?'crypto':'forex';if(!byM[mkt])byM[mkt]={pnl:0,wins:0,total:0};byM[mkt].pnl+=(c.pnl||0);byM[mkt].total++;if(c.status==='win')byM[mkt].wins++;if(c.grade&&byG[c.grade]){byG[c.grade].pnl+=(c.pnl||0);if(c.status==='win')byG[c.grade].w++;else if(c.status==='loss')byG[c.grade].l++;}});
+  s.calcs.forEach(c=>{if(!byM[c.market])byM[c.market]={pnl:0,wins:0,total:0};byM[c.market].pnl+=(c.pnl||0);byM[c.market].total++;if(c.status==='win')byM[c.market].wins++;if(c.grade&&byG[c.grade]){byG[c.grade].pnl+=(c.pnl||0);if(c.status==='win')byG[c.grade].w++;else if(c.status==='loss')byG[c.grade].l++;}});
   const mkts=Object.entries(byM).sort((a,b)=>b[1].pnl-a[1].pnl),maxA=Math.max(...mkts.map(([,v])=>Math.abs(v.pnl)),1);
   const mH=mkts.map(([m,v])=>{const col=v.pnl>=0?'var(--green)':'var(--red)';const w=(Math.abs(v.pnl)/maxA*100).toFixed(0);return`<div style="margin-bottom:9px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px"><span>${m}</span><span style="font-family:var(--m);color:${col}">${v.pnl>=0?'+':''}$${v.pnl.toFixed(2)} <span style="color:var(--muted);font-size:11px">${v.total?(v.wins/v.total*100).toFixed(0):0}%wr</span></span></div><div style="height:4px;width:${w}px;border-radius:2px;background:${col}"></div></div>`;}).join('');
   const gH=Object.entries(byG).filter(([,v])=>v.w+v.l>0).map(([g,v])=>{const col=v.pnl>=0?'var(--green)':'var(--red)';return`<div class="ar">${gb(g)} <span style="color:var(--muted);font-size:11px;margin-left:4px">${v.w+v.l}T</span><span style="font-family:var(--m);color:${col}">${v.pnl>=0?'+':''}$${v.pnl.toFixed(2)}</span></div>`;}).join('');
@@ -588,118 +582,12 @@ function updRoR(){
   const ttd=exp>0?Math.ceil(Math.log(2)/(Math.log(1+exp*risk/100))):'∞';document.getElementById('sim-ttd').textContent=typeof ttd==='number'?ttd+' trades':'∞';
 }
 function renderApiKeys(){
+  const uid=user?user.id:'';
   const el=document.getElementById('tab-apikeys');
-  const uid=user.id;
   const keyList=!apiKeys.length
     ?'<div style="color:var(--muted);font-size:13px;margin-bottom:14px;padding:13px;background:var(--card2);border-radius:9px;border:1px solid var(--b)">No keys yet - generate one below</div>'
     :apiKeys.map(k=>`<div class="ki"><div><div class="kp">${k.key_prefix}...(hidden)</div><div class="km">${k.name} - Created ${(k.created_at||'').slice(0,10)} - Last used: ${k.last_used_at?k.last_used_at.slice(0,10):'never'}</div></div><button class="btn-d" onclick="revokeKey('${k.id}')">Revoke</button></div>`).join('');
-  el.innerHTML=`
-    <div class="kw">
-      <div class="kwt">Your User ID</div>
-      <div class="kws">Copy this and paste it into the installer when asked. You need it to link your MT4/MT5 to your account.</div>
-      <div class="cu" id="uid-box">${uid}</div>
-      <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
-        <button class="btn-p" onclick="copyText(document.getElementById('uid-box').textContent,'uid-c')" style="font-size:13px">Copy User ID</button>
-        <span id="uid-c" style="font-size:11px;color:var(--green);display:none">Copied!</span>
-      </div>
-    </div>
-    <div class="kw">
-      <div class="kwt">Your API Keys</div>
-      <div class="kws">Each key connects one MT4/MT5 terminal to your account. Keys are stored encrypted - the real key is never saved.</div>
-      <div id="key-list">${keyList}</div>
-      <button class="btn-p" onclick="genKey()">+ Generate new API key</button>
-      <div id="key-area"></div>
-    </div>`;
-}
-function renderSetup(){
-  const el=document.getElementById('tab-setup');
-  const hasKey=apiKeys.length>0;
-  const uid=user?user.id:'';
-  const lastKey=sessionStorage.getItem('ttp_last_key')||'';
-  const GDRIVE='https://drive.google.com/uc?export=download&id=1V4D9BqREvOzxjpQXWkCa6QjtavDdn7-H';
-
-  const step=( n, color, icon, title, body)=>`
-    <div style="background:var(--card);border:1px solid ${color};border-radius:14px;padding:22px;margin-bottom:12px">
-      <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
-        <div style="width:36px;height:36px;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;font-family:var(--d);flex-shrink:0;color:var(--text)">${n}</div>
-        <div style="font-size:16px;font-weight:600">${icon} ${title}</div>
-      </div>
-      ${body}
-    </div>`;
-
-  const apiKeyBody = !hasKey
-    ? `<div style="font-size:13px;color:var(--muted);margin-bottom:12px">Go to the API Keys tab, generate a key, and come back here.</div>
-       <button class="btn-p" onclick="go('apikeys',null)" style="font-size:13px">Go to API Keys tab →</button>`
-    : lastKey
-      ? `<div style="font-size:13px;color:var(--muted);margin-bottom:10px">Your API key — copy it and paste it into the installer:</div>
-         <div style="background:#0a0a18;border:1px solid rgba(16,217,138,.3);border-radius:8px;padding:12px;font-family:var(--m);font-size:11px;color:var(--green);word-break:break-all;line-height:1.7;margin-bottom:10px">${lastKey}</div>
-         <div style="display:flex;gap:8px;align-items:center">
-           <button class="btn-p" onclick="navigator.clipboard.writeText('${lastKey}').then(()=>toast('API key copied!','ok'))" style="font-size:13px">Copy API key</button>
-           <span style="font-size:11px;color:var(--muted)">Save it — only shown once</span>
-         </div>`
-      : `<div class="ib b" style="margin:0"><strong>API key already generated.</strong> Need a new one? <span onclick="go('apikeys',null)" style="color:var(--blue);cursor:pointer;text-decoration:underline">Go to API Keys tab</span> — the new key will appear here.</div>`;
-
-  const userIdBody = `
-    <div style="font-size:13px;color:var(--muted);margin-bottom:10px">Your User ID — copy it and paste it into the installer:</div>
-    <div class="cu" id="setup-uid">${uid}</div>
-    <div style="display:flex;gap:8px;align-items:center;margin-top:10px">
-      <button class="btn-p" onclick="copyText(document.getElementById('setup-uid').textContent,'suid-c')" style="font-size:13px">Copy User ID</button>
-      <span id="suid-c" style="font-size:11px;color:var(--green);display:none">Copied!</span>
-    </div>`;
-
-  const downloadBody = `
-    <div style="font-size:13px;color:var(--muted);margin-bottom:14px">Download the installer — it automatically finds your MT4/MT5 and sets everything up.</div>
-    <a href="${GDRIVE}" target="_blank" style="text-decoration:none;display:block">
-      <div style="background:rgba(16,217,138,.08);border:1px solid rgba(16,217,138,.25);border-radius:10px;padding:18px;text-align:center;cursor:pointer;transition:.2s" onmouseover="this.style.borderColor='rgba(16,217,138,.5)'" onmouseout="this.style.borderColor='rgba(16,217,138,.25)'">
-        <div style="font-size:32px;margin-bottom:8px">&#11015;</div>
-        <div style="font-size:15px;font-weight:700;color:var(--green)">Download TradeTrackerPro_Installer.zip</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:4px">Windows 10 & 11 only</div>
-      </div>
-    </a>`;
-
-  const extractBody = `
-    <div style="font-size:13px;color:var(--muted);line-height:2">
-      <div style="padding:7px 0;border-bottom:1px solid var(--b)">1. Find the zip in your <strong style="color:var(--text)">Downloads folder</strong></div>
-      <div style="padding:7px 0;border-bottom:1px solid var(--b)">2. <strong style="color:var(--text)">Right-click</strong> the zip file</div>
-      <div style="padding:7px 0;border-bottom:1px solid var(--b)">3. Click <strong style="color:var(--text)">"Extract All"</strong></div>
-      <div style="padding:7px 0">4. Click <strong style="color:var(--text)">Extract</strong> — a new folder opens</div>
-    </div>`;
-
-  const runBody = `
-    <div style="font-size:13px;color:var(--muted);line-height:2">
-      <div style="padding:7px 0;border-bottom:1px solid var(--b)">1. Open the extracted folder</div>
-      <div style="padding:7px 0;border-bottom:1px solid var(--b)">2. <strong style="color:var(--text)">Double-click install.bat</strong></div>
-      <div style="padding:7px 0;border-bottom:1px solid var(--b)">3. Paste your <strong style="color:var(--text)">API key</strong> when asked</div>
-      <div style="padding:7px 0;border-bottom:1px solid var(--b)">4. Paste your <strong style="color:var(--text)">User ID</strong> when asked</div>
-      <div style="padding:7px 0">5. Installer finds MT4/MT5 automatically — click <strong style="color:var(--text)">Install</strong></div>
-    </div>`;
-
-  const mtBody = `
-    <div style="font-size:13px;color:var(--muted);line-height:2">
-      <div style="padding:7px 0;border-bottom:1px solid var(--b)">1. <strong style="color:var(--text)">Restart MT4/MT5</strong> completely</div>
-      <div style="padding:7px 0;border-bottom:1px solid var(--b)">2. Press <strong style="color:var(--text)">Ctrl+N</strong> to open Navigator</div>
-      <div style="padding:7px 0;border-bottom:1px solid var(--b)">3. Find <strong style="color:var(--text)">TradeTrackerPro_MT5_v3</strong> under Expert Advisors</div>
-      <div style="padding:7px 0;border-bottom:1px solid var(--b)">4. <strong style="color:var(--text)">Drag it onto your chart</strong></div>
-      <div style="padding:7px 0;border-bottom:1px solid var(--b)">5. Common tab: check <strong style="color:var(--text)">Allow Algo Trading</strong> → click OK</div>
-      <div style="padding:7px 0">6. Make sure <strong style="color:var(--green)">Algo Trading</strong> button in toolbar is green</div>
-    </div>`;
-
-  el.innerHTML=`<div class="ob-wrap">
-    <div class="ob-hero">
-      <div class="ob-ico">⚡</div>
-      <div class="ob-t">Connect MT4 or MT5</div>
-      <div class="ob-s">Follow all 6 steps in order. Takes about 5 minutes.</div>
-    </div>
-    ${step(1,'rgba(79,142,247,.25)','🔑','Generate your API key', apiKeyBody)}
-    ${step(2,'rgba(123,92,240,.25)','👤','Copy your User ID', userIdBody)}
-    ${step(3,'rgba(16,217,138,.25)','⬇','Download the installer', downloadBody)}
-    ${step(4,'rgba(247,195,90,.25)','📦','Extract the zip', extractBody)}
-    ${step(5,'rgba(79,142,247,.25)','▶','Run the installer', runBody)}
-    ${step(6,'rgba(16,217,138,.25)','📊','Attach EA to chart in MT4/MT5', mtBody)}
-    <div class="ib g" style="margin-top:4px"><strong>Done!</strong> Every trade you open or close will appear here automatically. Open a small test trade to confirm.</div>
-    <div class="ib b" style="margin-top:8px"><strong>On your phone?</strong> Open this dashboard URL in any mobile browser — it works on all devices.</div>
-    <div style="background:rgba(247,195,90,.06);border-left:3px solid var(--amber);border-radius:9px;padding:12px 14px;margin-top:8px;font-size:13px;color:#f9dfa0"><strong>Windows only.</strong> Mac users — contact support for manual setup.</div>
-  </div>`;
+  el.innerHTML=`<div class="kw"><div class="kwt">Your User ID</div><div class="kws">Copy this and paste it into the installer when asked.</div><div class="cu" id="uid-box">${uid}</div><div style="display:flex;align-items:center;gap:8px;margin-top:10px"><button class="btn-p" onclick="copyText(document.getElementById('uid-box').textContent,'uid-c')" style="font-size:13px">Copy User ID</button><span id="uid-c" style="font-size:11px;color:var(--green);display:none">Copied!</span></div></div><div class="kw"><div class="kwt">Your API Keys</div><div class="kws">Each key connects one MT4/MT5 terminal to your account. Keys are stored as encrypted hashes - never saved in plain text.</div><div id="key-list">${keyList}</div><button class="btn-p" onclick="genKey()">+ Generate new API key</button><div id="key-area"></div></div>`;
 }
 async function genKey(){
   const bytes=crypto.getRandomValues(new Uint8Array(32));
@@ -711,9 +599,7 @@ async function genKey(){
   await loadApiKeys();
   document.getElementById('key-area').innerHTML=`<div class="kw2" style="margin-top:14px"><strong>This key is shown ONCE.</strong> Copy it now and save it — we cannot show it again.</div><div class="kr">${rawKey}</div><div style="display:flex;align-items:center;gap:8px;margin-top:9px"><button class="btn-p" onclick="copyText('${rawKey}','kc')" style="font-size:13px">Copy API key</button><span id="kc" style="font-size:12px;color:var(--green);display:none">Copied!</span></div>`;
   document.getElementById('key-list').innerHTML=apiKeys.map(k=>`<div class="ki"><div><div class="kp">${k.key_prefix}...(hidden)</div><div class="km">${k.name} - ${(k.created_at||'').slice(0,10)} - Last used: ${k.last_used_at?k.last_used_at.slice(0,10):'never'}</div></div><button class="btn-d" onclick="revokeKey('${k.id}')">Revoke</button></div>`).join('');
-  sessionStorage.setItem('ttp_last_key', rawKey);
   toast('API key generated','ok');
-  if(tab==='setup') renderSetup();
 }
 async function revokeKey(id){
   if(!confirm('Revoke this key? The EA using it will stop syncing immediately.'))return;
@@ -729,7 +615,7 @@ function go(t,el){
   document.querySelectorAll('.sb-a').forEach(b=>b.classList.remove('active'));
   if(el)el.classList.add('active');
   document.getElementById('page-title').textContent=TITLES[t]||t;
-  ['trades','journal','analytics','calendar','daily','weekly','ror','apikeys','setup'].forEach(v=>{const el=document.getElementById('tab-'+v);el.style.display=v===t?'block':'none';el.style.width='100%';});
+  ['trades','journal','analytics','calendar','daily','weekly','ror','apikeys','setup'].forEach(v=>document.getElementById('tab-'+v).style.display=v===t?'block':'none');
   const showTop=['trades','daily','weekly','analytics'].includes(t);
   document.getElementById('goals-sec').style.display=showTop?'block':'none';
   document.getElementById('stats-grid').style.display=showTop?'grid':'none';
