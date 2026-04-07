@@ -86,7 +86,7 @@ input,select,textarea,button{font-family:var(--f)}
 .content{flex:1;padding:20px}
 @media(max-width:600px){.content{padding:14px}}
 
-.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(125px,1fr));gap:7px;margin-bottom:14px}
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:16px}
 .stat{background:var(--card);border:1px solid var(--b);border-radius:var(--r);padding:13px 15px;transition:.2s}
 .stat:hover{border-color:var(--b2)}
 .sl{font-size:10px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:5px}
@@ -111,9 +111,9 @@ input,select,textarea,button{font-family:var(--f)}
 .gm span{color:var(--text)}
 
 .tw{overflow-x:auto;border:1px solid var(--b);border-radius:var(--r)}
-table{width:100%;border-collapse:collapse;font-size:12px}
+table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
 th{font-size:10px;color:var(--muted);font-weight:500;letter-spacing:.4px;padding:8px 10px;border-bottom:1px solid var(--b);text-align:left;white-space:nowrap;background:rgba(255,255,255,.015);text-transform:uppercase}
-td{padding:8px 10px;border-bottom:1px solid var(--b);font-family:var(--m);font-size:12px;white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid var(--b);font-family:var(--m);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 tr:last-child td{border-bottom:none}
 tr.tr:hover td{background:rgba(255,255,255,.02);cursor:pointer}
 tr.tr.sel td{background:rgba(79,142,247,.06)}
@@ -160,7 +160,7 @@ tr.tr.sel td{background:rgba(79,142,247,.06)}
 .cpnl{font-size:10px;font-weight:600;font-family:var(--m)}
 .cdd{background:var(--card);border:1px solid var(--b);border-radius:var(--r);padding:13px 15px;margin-top:10px}
 
-.ag{display:grid;grid-template-columns:repeat(auto-fill,minmax(198px,1fr));gap:9px;margin-bottom:12px}
+.ag{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin-bottom:14px}
 .ac{background:var(--card);border:1px solid var(--b);border-radius:var(--r);padding:13px 15px}
 .at{font-size:10px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:9px}
 .ar{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--b);font-size:13px}
@@ -176,7 +176,7 @@ tr.tr.sel td{background:rgba(79,142,247,.06)}
 .kw2{background:var(--abg);border:1px solid rgba(247,195,90,.2);border-radius:8px;padding:10px 13px;font-size:12px;color:var(--amber);margin-bottom:11px;line-height:1.6}
 .cu{background:var(--card2);border:1px solid var(--b);border-radius:8px;padding:10px 13px;font-family:var(--m);font-size:11px;color:var(--blue);word-break:break-all;line-height:1.6}
 
-.rc{display:grid;grid-template-columns:repeat(auto-fill,minmax(188px,1fr));gap:9px;margin-bottom:12px}
+.rc{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
 .rcard{background:var(--card);border:1px solid var(--b);border-radius:var(--r);padding:14px}
 .rn{font-size:30px;font-weight:700;font-family:var(--m);margin:7px 0 3px;letter-spacing:-1px}
 .rl{font-size:10px;color:var(--muted);letter-spacing:.4px;text-transform:uppercase}
@@ -207,7 +207,7 @@ tr.tr.sel td{background:rgba(79,142,247,.06)}
 .ed{font-size:14px;color:var(--muted);line-height:1.65;max-width:380px;margin:0 auto 18px}
 .eb{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 
-.ob-wrap{max-width:660px;margin:0 auto;padding:16px 0}
+.ob-wrap{max-width:100%;padding:16px 0}
 .ob-hero{text-align:center;margin-bottom:36px}
 .ob-ico{font-size:44px;margin-bottom:14px}
 .ob-t{font-family:var(--d);font-size:28px;font-weight:800;margin-bottom:9px;background:linear-gradient(135deg,#fff,var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
@@ -517,7 +517,20 @@ function sb2(s){return`<span class="badge ${s}">${s}</span>`}
 function renderTrades(){
   const el=document.getElementById('tab-trades');
   if(!trades.length){el.innerHTML=`<div class="es"><div class="ei">📊</div><div class="et">No trades yet</div><div class="ed">Connect your MT4/MT5 EA to auto-log trades, or add one manually.</div><div class="eb"><button class="btn-p" onclick="go('setup',null)">⚡ Setup guide</button><button class="btn" onclick="toggleForm()">+ Log manually</button></div></div>`;return;}
-  el.innerHTML=`<div class="tw"><table><thead><tr><th>Date</th><th>Symbol</th><th>Dir</th><th>Entry</th><th>Exit</th><th>R:R</th><th>Risk%</th><th>P&L</th><th>Grade</th><th>Mood</th><th>Result</th><th></th></tr></thead><tbody>${[...trades].map(t=>{const{rr,pnl,status,rp}=calc(t);const pc=pnl==null?'':pnl>=0?'color:var(--green)':'color:var(--red)';const rpc=rp>2?'color:var(--red)':rp>1?'color:var(--amber)':'';return`<tr class="tr${selId===t.id?' sel':''}" onclick="selectTrade('${t.id}')"><td>${(t.open_time||'').slice(0,10)}</td><td style="font-weight:600">${t.symbol||''}</td><td class="${t.direction}">${t.direction}</td><td>${fmt(+t.entry_price)}</td><td>${t.exit_price!=null?fmt(+t.exit_price):'—'}</td><td><div style="display:flex;align-items:center;gap:4px"><span>${rr>0?rr.toFixed(2):'—'}</span>${rr>0?`<div style="height:3px;width:${Math.min(rr*11,40).toFixed(0)}px;background:var(--green);border-radius:2px"></div>`:''}</div></td><td style="${rpc}">${rp>0?rp.toFixed(1)+'%':'—'}</td><td style="${pc}">${pnl!=null?(pnl>=0?'+':'')+'$'+Math.abs(pnl).toFixed(2):'—'}</td><td>${gb(t.grade)}</td><td>${eb(t.emotion)}</td><td>${sb2(status)}</td><td><button class="btn-x" onclick="event.stopPropagation();delTrade('${t.id}')">×</button></td></tr>`;}).join('')}</tbody></table></div>`;
+  el.innerHTML=`<div class="tw"><table><thead><tr>
+  <th style="width:100px">Date</th>
+  <th style="width:90px">Symbol</th>
+  <th style="width:50px">Dir</th>
+  <th style="width:90px">Entry</th>
+  <th style="width:90px">Exit</th>
+  <th style="width:70px">R:R</th>
+  <th style="width:65px">Risk%</th>
+  <th style="width:90px">P&L</th>
+  <th style="width:60px">Grade</th>
+  <th style="width:80px">Mood</th>
+  <th style="width:65px">Result</th>
+  <th style="width:30px"></th>
+</tr></thead><tbody>${[...trades].map(t=>{const{rr,pnl,status,rp}=calc(t);const pc=pnl==null?'':pnl>=0?'color:var(--green)':'color:var(--red)';const rpc=rp>2?'color:var(--red)':rp>1?'color:var(--amber)':'';return`<tr class="tr${selId===t.id?' sel':''}" onclick="selectTrade('${t.id}')"><td>${(t.open_time||'').slice(0,10)}</td><td style="font-weight:600">${t.symbol||''}</td><td class="${t.direction}">${t.direction}</td><td>${fmt(+t.entry_price)}</td><td>${t.exit_price!=null?fmt(+t.exit_price):'—'}</td><td><div style="display:flex;align-items:center;gap:4px"><span>${rr>0?rr.toFixed(2):'—'}</span>${rr>0?`<div style="height:3px;width:${Math.min(rr*11,40).toFixed(0)}px;background:var(--green);border-radius:2px"></div>`:''}</div></td><td style="${rpc}">${rp>0?rp.toFixed(1)+'%':'—'}</td><td style="${pc}">${pnl!=null?(pnl>=0?'+':'')+'$'+Math.abs(pnl).toFixed(2):'—'}</td><td>${gb(t.grade)}</td><td>${eb(t.emotion)}</td><td>${sb2(status)}</td><td><button class="btn-x" onclick="event.stopPropagation();delTrade('${t.id}')">×</button></td></tr>`;}).join('')}</tbody></table></div>`;
 }
 function selectTrade(id){
   selId=selId===id?null:id;renderTrades();
