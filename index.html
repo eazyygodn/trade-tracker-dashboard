@@ -110,7 +110,7 @@ input,select,textarea,button{font-family:var(--f)}
 .gm{font-size:11px;color:var(--muted);font-family:var(--m);margin-top:6px;padding-top:7px;border-top:1px solid var(--b)}
 .gm span{color:var(--text)}
 
-.tw{overflow-x:auto;border:1px solid var(--b);border-radius:var(--r)}
+.tw{overflow-x:auto;border:1px solid var(--b);border-radius:var(--r);width:100%;display:block}
 table{border-collapse:collapse;font-size:12px;min-width:100%}
 th{font-size:10px;color:var(--muted);font-weight:500;letter-spacing:.4px;padding:8px 12px;border-bottom:1px solid var(--b);text-align:left;white-space:nowrap;background:rgba(255,255,255,.015);text-transform:uppercase}
 td{padding:9px 12px;border-bottom:1px solid var(--b);font-family:var(--m);font-size:12px;white-space:nowrap}
@@ -189,7 +189,7 @@ tr.tr.sel td{background:rgba(79,142,247,.06)}
 .si .rl2{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
 .si .rv{font-size:21px;font-weight:700;font-family:var(--m);margin-top:4px}
 
-.ptable{overflow-x:auto;border:1px solid var(--b);border-radius:var(--r)}
+.ptable{overflow-x:auto;border:1px solid var(--b);border-radius:var(--r);width:100%;display:block}
 
 .fc2{background:var(--card);border:1px solid var(--b2);border-radius:var(--r);padding:18px;margin-bottom:12px}
 .fs{font-size:10px;font-weight:600;color:var(--muted);letter-spacing:.6px;padding-bottom:9px;border-bottom:1px solid var(--b);margin-bottom:12px;text-transform:uppercase}
@@ -682,7 +682,7 @@ function go(t,el){
   document.querySelectorAll('.sb-a').forEach(b=>b.classList.remove('active'));
   if(el)el.classList.add('active');
   document.getElementById('page-title').textContent=TITLES[t]||t;
-  ['trades','journal','analytics','calendar','daily','weekly','ror','apikeys','setup'].forEach(v=>document.getElementById('tab-'+v).style.display=v===t?'block':'none');
+  ['trades','journal','analytics','calendar','daily','weekly','ror','apikeys','setup'].forEach(v=>{const el=document.getElementById('tab-'+v);el.style.display=v===t?'block':'none';});
   const showTop=['trades','daily','weekly','analytics'].includes(t);
   document.getElementById('goals-sec').style.display=showTop?'block':'none';
   document.getElementById('stats-grid').style.display=showTop?'grid':'none';
