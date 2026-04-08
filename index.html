@@ -72,8 +72,8 @@ input,select,textarea,button{font-family:var(--f)}
 .sb-so{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:2px;flex-shrink:0}
 .sb-so:hover{color:var(--red)}
 
-.mw{margin-left:220px;min-height:100vh;display:flex;flex-direction:column}
-@media(max-width:768px){.mw{margin-left:0}}
+.mw{margin-left:220px;min-height:100vh;display:flex;flex-direction:column;width:calc(100% - 220px);flex:1}
+@media(max-width:768px){.mw{margin-left:0;width:100%}}
 .topbar{height:54px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between;padding:0 20px;position:sticky;top:0;background:rgba(8,8,16,.92);backdrop-filter:blur(12px);z-index:40;gap:10px}
 .tl{display:flex;align-items:center;gap:10px}
 .mbtn{display:none;background:none;border:none;color:var(--text);font-size:20px;cursor:pointer}
