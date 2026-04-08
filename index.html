@@ -79,7 +79,7 @@ input,select,textarea,button{font-family:var(--f)}
 .mbtn{display:none;background:none;border:none;color:var(--text);font-size:20px;cursor:pointer}
 @media(max-width:768px){.mbtn{display:block}}
 .pt{font-family:var(--d);font-size:16px;font-weight:700}
-.tr{display:flex;align-items:center;gap:8px}
+.tr-right{display:flex;align-items:center;gap:8px}
 .lp{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);background:var(--card2);border:1px solid var(--b);border-radius:20px;padding:4px 10px}
 .ld{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
@@ -305,7 +305,7 @@ input[type=range]{accent-color:var(--blue);cursor:pointer;width:100%;flex:1}
         <button class="mbtn" onclick="toggleSB()">☰</button>
         <div class="pt" id="page-title">Trades</div>
       </div>
-      <div class="tr">
+      <div class="tr-right">
         <div class="lp"><div class="ld"></div><span id="sync-st">connecting</span></div>
         <button class="btn" onclick="exportCSV()" style="font-size:12px;padding:5px 11px">↓ CSV</button>
         <button class="btn-p" onclick="toggleForm()" id="btn-add" style="padding:7px 15px">+ Trade</button>
