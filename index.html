@@ -467,15 +467,22 @@ function saveGoals(){goals.a=parseFloat(document.getElementById('g-a').value)||0
 
 function calc(t){
   const e=+t.entry_price,sl=+t.stop_loss,tp=+t.take_profit,lo=+t.lots||1;
-  const isB=t.direction==='buy',risk=isB?e-sl:sl-e;
-  const rr=risk>0?(isB?tp-e:e-tp)/risk:0;
+  const isB=t.direction==='buy';
+  const risk=sl>0?(isB?e-sl:sl-e):0;
+  const reward=tp>0?(isB?tp-e:e-tp):0;
+  let rr=(risk>0&&reward>0)?reward/risk:0;
   let pnl=null,status='open';
-  if(t.exit_price!=null){pnl=t.profit!=null?+t.profit:(isB?(+t.exit_price-e)*lo:(e-+t.exit_price)*lo);const tol=Math.abs(risk)*0.05;status=pnl>tol?'win':pnl<-tol?'loss':'be';}
-  const rp=goals.a>0?(Math.abs(risk*lo)/goals.a*100):0;
+  if(t.exit_price!=null||t.status==='closed'){
+    const ex=t.exit_price!=null?+t.exit_price:e;
+    pnl=t.profit!=null?+t.profit:(isB?(ex-e)*lo:(e-ex)*lo);
+    status=pnl>0.01?'win':pnl<-0.01?'loss':'be';
+    if(risk>0){const actual=isB?(ex-e):(e-ex);rr=actual/risk;}
+  }
+  const rp=goals.a>0&&risk>0?(Math.abs(risk*lo)/goals.a*100):0;
   return{rr,pnl,status,rp};
 }
 function getStats(){
-  const cl=trades.filter(t=>t.exit_price!=null),ca=cl.map(t=>({...t,...calc(t)}));
+  const cl=trades.filter(t=>t.exit_price!=null||t.status==='closed'),ca=cl.map(t=>({...t,...calc(t)}));
   const wi=ca.filter(c=>c.status==='win'),lo=ca.filter(c=>c.status==='loss');
   const total=ca.reduce((s,c)=>s+(c.pnl||0),0),wr=cl.length?wi.length/cl.length*100:0,aRR=cl.length?ca.reduce((s,c)=>s+c.rr,0)/cl.length:0;
   const gw=wi.reduce((s,c)=>s+Math.abs(c.pnl||0),0),gl=lo.reduce((s,c)=>s+Math.abs(c.pnl||0),0),pf=gl>0?gw/gl:(gw>0?99:0);
