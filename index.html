@@ -184,8 +184,9 @@ input,select,textarea,button{font-family:var(--font)}
 }
 .overlay{
   display:none;position:fixed;inset:0;
-  background:rgba(0,0,0,.6);z-index:49;
+  background:rgba(0,0,0,.7);z-index:49;
 }
+@media(max-width:768px){.overlay.show{display:block!important}}
 .sb-logo{padding:24px 20px 20px;border-bottom:1px solid var(--b1)}
 .sb-logo-t{
   font-size:18px;font-weight:800;letter-spacing:-.5px;
@@ -464,6 +465,13 @@ tr.tr.sel td{background:rgba(0,212,170,.06)}
 input[type=range]{accent-color:var(--ac);cursor:pointer;width:100%;flex:1}
 
 /* ── MOBILE ── */
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%) !important}
+  .sidebar.open{transform:none !important}
+  .mw{margin-left:0 !important;width:100% !important}
+  .mbtn{display:block !important}
+  table{min-width:600px}
+}
 @media(max-width:600px){
   .stats{grid-template-columns:repeat(2,1fr)}
   .dpg{grid-template-columns:repeat(2,1fr)}
@@ -473,6 +481,17 @@ input[type=range]{accent-color:var(--ac);cursor:pointer;width:100%;flex:1}
   .gh{flex-direction:column;align-items:flex-start}
   .gi-row{gap:6px}
   .topbar{padding:0 14px}
+  .content{padding:12px}
+  .stats{gap:6px}
+  .stat{padding:10px 12px}
+  .sv{font-size:18px}
+  td,th{padding:8px 10px;font-size:11px}
+  .gc{padding:12px 14px}
+  .kw{padding:14px}
+  .cg{gap:3px}
+  .cd{min-height:48px;padding:4px 2px}
+  .cdn{font-size:10px}
+  .cpnl{font-size:9px}
 }
 
 </style>
@@ -932,7 +951,7 @@ function go(t,el){
   document.getElementById('btn-add').style.display=t==='trades'?'':'none';
   closeSB();render();
 }
-function toggleSB(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('overlay').style.display='block';}
+function toggleSB(){const sb=document.getElementById('sidebar');const ov=document.getElementById('overlay');sb.classList.toggle('open');ov.style.display=sb.classList.contains('open')?'block':'none';}
 function closeSB(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').style.display='none';}
 function toggleForm(){const open=document.getElementById('trade-form').style.display==='none';document.getElementById('trade-form').style.display=open?'block':'none';document.getElementById('btn-add').textContent=open?'× Cancel':'+ Trade';if(open)document.getElementById('f-date').value=new Date().toISOString().split('T')[0];}
 function clearForm(){['f-sym','f-en','f-sl','f-tp','f-ex','f-lo','f-pr','f-no'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-gr').value='';document.getElementById('f-em').value='';}
