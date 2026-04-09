@@ -177,16 +177,12 @@ input,select,textarea,button{font-family:var(--font)}
   position:fixed;top:0;left:0;bottom:0;z-index:50;
   transition:transform .25s cubic-bezier(.4,0,.2,1);
 }
-@media(max-width:768px){
-  .sidebar{transform:translateX(-100%)}
-  .sidebar.open{transform:none;box-shadow:20px 0 60px rgba(0,0,0,.5)}
-  .overlay{display:block!important}
-}
+
 .overlay{
   display:none;position:fixed;inset:0;
   background:rgba(0,0,0,.7);z-index:49;
 }
-@media(max-width:768px){.overlay.show{display:block!important}}
+
 .sb-logo{padding:24px 20px 20px;border-bottom:1px solid var(--b1)}
 .sb-logo-t{
   font-size:18px;font-weight:800;letter-spacing:-.5px;
@@ -234,7 +230,7 @@ input,select,textarea,button{font-family:var(--font)}
   min-height:100vh;
   display:flex;flex-direction:column;
 }
-@media(max-width:768px){.mw{margin-left:0;width:100%}}
+
 
 .topbar{
   height:56px;border-bottom:1px solid var(--b1);
@@ -246,7 +242,7 @@ input,select,textarea,button{font-family:var(--font)}
 }
 .tl{display:flex;align-items:center;gap:12px}
 .mbtn{display:none;background:none;border:none;color:var(--t1);font-size:20px;cursor:pointer}
-@media(max-width:768px){.mbtn{display:block}}
+
 .page-ttl{font-size:15px;font-weight:700;letter-spacing:-.2px;color:var(--t1)}
 .tr-right{display:flex;align-items:center;gap:8px}
 .live-pill{
