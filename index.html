@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Trade Tracker Pro</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
 <script>
@@ -78,18 +78,7 @@ body{
   -webkit-font-smoothing:antialiased;
 }
 
-/* Subtle grid background */
-body::before{
-  content:'';
-  position:fixed;
-  inset:0;
-  background-image:
-    linear-gradient(rgba(0,212,170,.015) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,212,170,.015) 1px, transparent 1px);
-  background-size:40px 40px;
-  pointer-events:none;
-  z-index:0;
-}
+
 
 input,select,textarea,button{font-family:var(--font)}
 ::-webkit-scrollbar{width:3px;height:3px}
@@ -251,7 +240,7 @@ input,select,textarea,button{font-family:var(--font)}
   display:flex;align-items:center;justify-content:space-between;
   padding:0 24px;
   position:sticky;top:0;
-  background:rgba(9,9,15,.9);backdrop-filter:blur(20px);
+  background:rgba(9,9,15,.95);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
   z-index:40;gap:12px;
 }
 .tl{display:flex;align-items:center;gap:12px}
