@@ -834,17 +834,195 @@ function calClick(d){calSel=calSel===d?null:d;renderCalendar();}
 function renderAnalytics(){
   const el=document.getElementById('tab-analytics'),s=getStats();
   if(!s.closed){el.innerHTML=`<div class="es"><div class="ei">📈</div><div class="et">No data yet</div><div class="ed">Analytics appear once you have closed trades.</div></div>`;return;}
-  const byM={},byG={A:{w:0,l:0,pnl:0},B:{w:0,l:0,pnl:0},C:{w:0,l:0,pnl:0},D:{w:0,l:0,pnl:0}};
-  s.calcs.forEach(c=>{if(!byM[c.market])byM[c.market]={pnl:0,wins:0,total:0};byM[c.market].pnl+=(c.pnl||0);byM[c.market].total++;if(c.status==='win')byM[c.market].wins++;if(c.grade&&byG[c.grade]){byG[c.grade].pnl+=(c.pnl||0);if(c.status==='win')byG[c.grade].w++;else if(c.status==='loss')byG[c.grade].l++;}});
-  const mkts=Object.entries(byM).sort((a,b)=>b[1].pnl-a[1].pnl),maxA=Math.max(...mkts.map(([,v])=>Math.abs(v.pnl)),1);
-  const mH=mkts.map(([m,v])=>{const col=v.pnl>=0?'var(--green)':'var(--red)';const w=(Math.abs(v.pnl)/maxA*100).toFixed(0);return`<div style="margin-bottom:9px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px"><span>${m}</span><span style="font-family:var(--mono);color:${col}">${v.pnl>=0?'+':''}$${v.pnl.toFixed(2)} <span style="color:var(--t2);font-size:11px">${v.total?(v.wins/v.total*100).toFixed(0):0}%wr</span></span></div><div style="height:4px;width:${w}px;border-radius:2px;background:${col}"></div></div>`;}).join('');
-  const gH=Object.entries(byG).filter(([,v])=>v.w+v.l>0).map(([g,v])=>{const col=v.pnl>=0?'var(--green)':'var(--red)';return`<div class="ar">${gb(g)} <span style="color:var(--t2);font-size:11px;margin-left:4px">${v.w+v.l}T</span><span style="font-family:var(--mono);color:${col}">${v.pnl>=0?'+':''}$${v.pnl.toFixed(2)}</span></div>`;}).join('');
-  const rec=[...s.calcs].slice(-20),eq=[0];rec.forEach(c=>eq.push((eq[eq.length-1]||0)+(c.pnl||0)));
+
+  const cl=trades.filter(t=>t.status==='closed'||t.exit_price!=null);
+  const ca=cl.map(t=>({...t,...calc(t)}));
+
+  // --- BY HOUR ---
+  const byHour={};
+  cl.forEach(t=>{
+    const h=new Date(t.open_time).getUTCHours();
+    if(!byHour[h])byHour[h]={pnl:0,wins:0,total:0};
+    const c=calc(t);
+    byHour[h].pnl+=(c.pnl||0);byHour[h].total++;
+    if(c.status==='win')byHour[h].wins++;
+  });
+
+  // --- BY DAY ---
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const byDay={};
+  cl.forEach(t=>{
+    const d=days[new Date(t.open_time).getUTCDay()];
+    if(!byDay[d])byDay[d]={pnl:0,wins:0,total:0};
+    const c=calc(t);
+    byDay[d].pnl+=(c.pnl||0);byDay[d].total++;
+    if(c.status==='win')byDay[d].wins++;
+  });
+
+  // --- BY DIRECTION ---
+  const byDir={buy:{pnl:0,wins:0,total:0},sell:{pnl:0,wins:0,total:0}};
+  ca.forEach(c=>{
+    const d=c.direction;
+    if(!byDir[d])byDir[d]={pnl:0,wins:0,total:0};
+    byDir[d].pnl+=(c.pnl||0);byDir[d].total++;
+    if(c.status==='win')byDir[d].wins++;
+  });
+
+  // --- BY SYMBOL ---
+  const bySym={};
+  ca.forEach(c=>{
+    const s=c.symbol;
+    if(!bySym[s])bySym[s]={pnl:0,wins:0,total:0};
+    bySym[s].pnl+=(c.pnl||0);bySym[s].total++;
+    if(c.status==='win')bySym[s].wins++;
+  });
+
+  // --- EQUITY CURVE ---
+  const eq=[0];
+  ca.forEach(c=>eq.push((eq[eq.length-1]||0)+(c.pnl||0)));
   const minE=Math.min(...eq),maxE=Math.max(...eq),rng=maxE-minE||1;
-  const pts=eq.map((v,i)=>((i/(eq.length-1))*210)+','+(48-((v-minE)/rng)*44)).join(' ');
+  const W=400,H=80;
+  const pts=eq.map((v,i)=>((i/(eq.length-1||1))*W)+','+(H-8-((v-minE)/rng)*(H-16))).join(' ');
   const lc=eq[eq.length-1]>=0?'var(--green)':'var(--red)';
-  el.innerHTML=`<div class="ag"><div class="ac"><div class="at">Equity curve</div><svg viewBox="0 0 210 52" width="100%" style="overflow:visible"><polyline points="${pts}" fill="none" stroke="${lc}" stroke-width="1.5" stroke-linejoin="round"/>${eq.map((v,i)=>{const x=(i/(eq.length-1))*210,y=48-((v-minE)/rng)*44;return`<circle cx="${x}" cy="${y}" r="2.5" fill="${i===0?'#555':s.calcs[i-1]?.status==='win'?'#10d98a':'#f05068'}"/>`;}).join('')}</svg><div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t2);font-family:var(--mono);margin-top:3px"><span>$${minE.toFixed(0)}</span><span>$${maxE.toFixed(0)}</span></div></div><div class="ac"><div class="at">P&L by market</div>${mH||'<div style="color:var(--t2)">No data</div>'}</div><div class="ac"><div class="at">P&L by grade</div>${gH||'<div style="color:var(--t2);font-size:12px">Grade your trades to unlock this</div>'}</div><div class="ac"><div class="at">Performance</div>${[['Best trade','$'+(s.calcs.reduce((b,c)=>Math.max(b,c.pnl||0),0).toFixed(2)),'pos'],['Worst trade','-$'+Math.abs(s.calcs.reduce((b,c)=>Math.min(b,c.pnl||0),0)).toFixed(2),'neg'],['Max drawdown','-$'+Math.abs(s.maxDD).toFixed(2),'neg'],['Avg R:R',s.aRR.toFixed(2),'info'],['Profit factor',s.pf>=99?'∞':s.pf.toFixed(2),s.pf>=1?'pos':'neg']].map(([l,v,c])=>`<div class="ar"><span style="color:var(--t2)">${l}</span><span class="${c}" style="font-family:var(--mono)">${v}</span></div>`).join('')}</div></div>`;
+
+  // --- DRAWDOWN CURVE ---
+  let peak=0,dd=[];
+  eq.forEach(v=>{peak=Math.max(peak,v);dd.push(Math.min(0,v-peak));});
+  const minDD=Math.min(...dd)||(-1);
+  const ddPts=dd.map((v,i)=>((i/(dd.length-1||1))*W)+','+(H-8-((v-minDD)/Math.abs(minDD||1))*(H-16))).join(' ');
+
+  // --- RUNNING PNL (win/loss streaks) ---
+  let streak=0,maxStreak=0,maxLoseStreak=0,curLose=0;
+  ca.forEach(c=>{
+    if(c.status==='win'){streak++;maxStreak=Math.max(maxStreak,streak);curLose=0;}
+    else if(c.status==='loss'){curLose++;maxLoseStreak=Math.max(maxLoseStreak,curLose);streak=0;}
+  });
+
+  // --- BEST/WORST STATS ---
+  const winners=ca.filter(c=>c.status==='win');
+  const losers=ca.filter(c=>c.status==='loss');
+  const avgWin=winners.length?winners.reduce((s,c)=>s+(c.pnl||0),0)/winners.length:0;
+  const avgLoss=losers.length?losers.reduce((s,c)=>s+(c.pnl||0),0)/losers.length:0;
+  const bestTrade=ca.reduce((b,c)=>( (c.pnl||0)>(b.pnl||0)?c:b ),ca[0]);
+  const worstTrade=ca.reduce((b,c)=>( (c.pnl||0)<(b.pnl||0)?c:b ),ca[0]);
+  const avgHold=cl.length?cl.reduce((s,t)=>{
+    const ms=new Date(t.close_time||Date.now())-new Date(t.open_time);
+    return s+ms;
+  },0)/cl.length:0;
+  const holdStr=avgHold>3600000?`${(avgHold/3600000).toFixed(1)}h`:`${(avgHold/60000).toFixed(0)}m`;
+
+  // --- HELPERS ---
+  const bar=(val,max,col)=>{const w=Math.round(Math.abs(val)/Math.max(Math.abs(max),1)*120);return`<div style="height:4px;width:${w}px;background:${col};border-radius:2px;margin-top:3px"></div>`;};
+  const pct=(v,t)=>t?(v/t*100).toFixed(0)+'%':'0%';
+  const pnlFmt=(v)=>`<span style="font-family:var(--mono);color:${v>=0?'var(--green)':'var(--red)'}">${v>=0?'+':''}$${Math.abs(v).toFixed(2)}</span>`;
+  const ac=(title,body)=>`<div class="ac"><div class="at">${title}</div>${body}</div>`;
+  const row=(l,v)=>`<div class="ar"><span style="color:var(--t2)">${l}</span><span style="font-family:var(--mono)">${v}</span></div>`;
+
+  // --- HOUR CHART ---
+  const hourMax=Math.max(...Object.values(byHour).map(v=>Math.abs(v.pnl)),1);
+  const hourChart=[...Array(24)].map((_,h)=>{
+    const d=byHour[h];if(!d)return`<div style="display:flex;flex-direction:column;align-items:center;gap:2px"><div style="height:40px;display:flex;align-items:flex-end"><div style="width:14px;height:2px;background:var(--b2);border-radius:2px"></div></div><div style="font-size:9px;color:var(--t3)">${h}</div></div>`;
+    const col=d.pnl>=0?'var(--green)':'var(--red)';
+    const h2=Math.max(3,Math.round(Math.abs(d.pnl)/hourMax*40));
+    return`<div style="display:flex;flex-direction:column;align-items:center;gap:2px" title="${h}:00 — ${d.pnl>=0?'+':''}$${d.pnl.toFixed(2)} (${d.total}T)"><div style="height:40px;display:flex;align-items:flex-end"><div style="width:14px;height:${h2}px;background:${col};border-radius:2px 2px 0 0"></div></div><div style="font-size:9px;color:var(--t3)">${h}</div></div>`;
+  }).join('');
+
+  // --- DAY CHART ---
+  const tradingDays=['Mon','Tue','Wed','Thu','Fri'];
+  const dayMax=Math.max(...Object.values(byDay).map(v=>Math.abs(v.pnl)),1);
+  const dayChart=tradingDays.map(d=>{
+    const v=byDay[d];if(!v)return`<div style="flex:1;text-align:center"><div style="height:50px;display:flex;align-items:flex-end;justify-content:center"><div style="width:32px;height:2px;background:var(--b2);border-radius:2px"></div></div><div style="font-size:11px;color:var(--t3)">${d}</div></div>`;
+    const col=v.pnl>=0?'var(--green)':'var(--red)';
+    const h=Math.max(3,Math.round(Math.abs(v.pnl)/dayMax*50));
+    return`<div style="flex:1;text-align:center" title="${d} — ${v.pnl>=0?'+':''}$${v.pnl.toFixed(2)} (${v.total}T ${pct(v.wins,v.total)}WR)"><div style="height:50px;display:flex;align-items:flex-end;justify-content:center"><div style="width:32px;height:${h}px;background:${col};border-radius:3px 3px 0 0"></div></div><div style="font-size:11px;color:var(--t2);margin-top:4px">${d}</div><div style="font-size:10px;font-family:var(--mono);color:${col}">${v.pnl>=0?'+':''}$${Math.abs(v.pnl).toFixed(0)}</div></div>`;
+  }).join('');
+
+  // --- SYMBOL TABLE ---
+  const symRows=Object.entries(bySym).sort((a,b)=>b[1].pnl-a[1].pnl).map(([sym,v])=>{
+    const col=v.pnl>=0?'var(--green)':'var(--red)';
+    return`<div class="ar"><span style="font-weight:600">${sym}</span><span style="color:var(--t2);font-size:11px">${v.total}T</span><span style="color:var(--t2);font-size:11px">${pct(v.wins,v.total)}WR</span>${pnlFmt(v.pnl)}</div>`;
+  }).join('');
+
+  el.innerHTML=`
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+    ${ac('Equity curve',`
+      <svg viewBox="0 0 400 80" width="100%" style="overflow:visible">
+        <polyline points="${pts}" fill="none" stroke="${lc}" stroke-width="2" stroke-linejoin="round"/>
+        ${eq.map((v,i)=>{const x=(i/(eq.length-1||1))*400,y=80-8-((v-minE)/rng)*(80-16);return`<circle cx="${x}" cy="${y}" r="3" fill="${i===0?'var(--t3)':ca[i-1]?.status==='win'?'var(--green)':'var(--red)'}" opacity="0.8"/>`;}).join('')}
+      </svg>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t2);font-family:var(--mono);margin-top:4px">
+        <span>$${minE.toFixed(0)}</span><span style="color:${lc};font-weight:600">${eq[eq.length-1]>=0?'+':''}$${eq[eq.length-1].toFixed(2)}</span><span>$${maxE.toFixed(0)}</span>
+      </div>
+    `)}
+    ${ac('Drawdown',`
+      <svg viewBox="0 0 400 80" width="100%" style="overflow:visible">
+        <polyline points="${ddPts}" fill="none" stroke="var(--red)" stroke-width="2" stroke-linejoin="round"/>
+      </svg>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t2);font-family:var(--mono);margin-top:4px">
+        <span>Max DD: <span style="color:var(--red)">-$${Math.abs(s.maxDD).toFixed(2)}</span></span>
+        <span>Current: <span style="color:var(--red)">$${dd[dd.length-1].toFixed(2)}</span></span>
+      </div>
+    `)}
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-bottom:10px">
+    ${ac('Performance summary',`
+      ${row('Total P&L',`<span class="${s.total>=0?'pos':'neg'}">${s.total>=0?'+':''}$${Math.abs(s.total).toFixed(2)}</span>`)}
+      ${row('Win rate',`${s.wr.toFixed(1)}% (${s.calcs.filter(c=>c.status==='win').length}W / ${s.calcs.filter(c=>c.status==='loss').length}L)`)}
+      ${row('Avg win',`<span class="pos">+$${avgWin.toFixed(2)}</span>`)}
+      ${row('Avg loss',`<span class="neg">$${avgLoss.toFixed(2)}</span>`)}
+      ${row('Profit factor',`<span class="${s.pf>=1?'pos':'neg'}">${s.pf>=99?'∞':s.pf.toFixed(2)}</span>`)}
+      ${row('Avg R:R',`<span class="info">${s.aRR.toFixed(2)}</span>`)}
+      ${row('Avg hold time',holdStr)}
+      ${row('Best streak',`<span class="pos">${maxStreak}W</span>`)}
+      ${row('Worst streak',`<span class="neg">${maxLoseStreak}L</span>`)}
+    `)}
+    ${ac('Best & worst trades',`
+      <div style="margin-bottom:10px">
+        <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Best trade</div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:13px">${bestTrade?.symbol||'—'} ${bestTrade?.direction||''}</span>
+          <span class="pos" style="font-family:var(--mono);font-size:16px;font-weight:700">+$${Math.max(...ca.map(c=>c.pnl||0)).toFixed(2)}</span>
+        </div>
+        <div style="font-size:11px;color:var(--t2);margin-top:2px">${bestTrade?.open_time?.slice(0,10)||''}</div>
+      </div>
+      <div style="border-top:1px solid var(--b1);padding-top:10px">
+        <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Worst trade</div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:13px">${worstTrade?.symbol||'—'} ${worstTrade?.direction||''}</span>
+          <span class="neg" style="font-family:var(--mono);font-size:16px;font-weight:700">$${Math.min(...ca.map(c=>c.pnl||0)).toFixed(2)}</span>
+        </div>
+        <div style="font-size:11px;color:var(--t2);margin-top:2px">${worstTrade?.open_time?.slice(0,10)||''}</div>
+      </div>
+    `)}
+    ${ac('Performance by direction',`
+      ${['buy','sell'].map(d=>{const v=byDir[d];if(!v||!v.total)return'';const col=v.pnl>=0?'var(--green)':'var(--red)';return`
+        <div style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+            <span class="${d}" style="font-weight:700;text-transform:uppercase;font-size:12px">${d}</span>
+            <span style="font-family:var(--mono);color:${col}">${v.pnl>=0?'+':''}$${v.pnl.toFixed(2)}</span>
+          </div>
+          <div style="display:flex;gap:12px;font-size:11px;color:var(--t2)">
+            <span>${v.total} trades</span>
+            <span>${pct(v.wins,v.total)} WR</span>
+          </div>
+          ${bar(v.pnl,Math.max(Math.abs(byDir.buy?.pnl||0),Math.abs(byDir.sell?.pnl||0)),col)}
+        </div>`;}).join('')}
+    `)}
+    ${ac('By symbol',symRows||'<div style="color:var(--t2)">No data</div>')}
+  </div>
+  <div style="display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:10px">
+    ${ac('P&L by hour of day',`
+      <div style="display:flex;gap:2px;align-items:flex-end;overflow-x:auto;padding-bottom:4px">${hourChart}</div>
+      <div style="font-size:10px;color:var(--t2);margin-top:6px">UTC time — hover bars for details</div>
+    `)}
+  </div>
+  <div style="display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:10px">
+    ${ac('P&L by day of week',`
+      <div style="display:flex;gap:4px;align-items:flex-end;padding-bottom:4px">${dayChart}</div>
+    `)}
+  </div>`;
 }
+
 function getPeriods(gfn){const map={};trades.filter(t=>t.exit_price).forEach(t=>{const c=calc(t),k=gfn((t.open_time||''));if(!map[k])map[k]={pnl:0,wins:0,losses:0,be:0,total:0};map[k].pnl+=(c.pnl||0);map[k].total++;if(c.status==='win')map[k].wins++;else if(c.status==='loss')map[k].losses++;else map[k].be++;});return Object.entries(map).sort((a,b)=>b[0].localeCompare(a[0]));}
 function wk(d){try{const dt=new Date(d),dy=dt.getDay()||7;dt.setDate(dt.getDate()-dy+1);return dt.toISOString().split('T')[0];}catch{return d;}}
 function buildPT(entries,label){
