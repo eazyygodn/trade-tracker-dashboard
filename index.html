@@ -462,32 +462,62 @@ input[type=range]{accent-color:var(--ac);cursor:pointer;width:100%;flex:1}
 
 /* ── MOBILE ── */
 @media(max-width:768px){
-  .sidebar{transform:translateX(-100%) !important}
-  .sidebar.open{transform:none !important}
-  .mw{margin-left:0 !important;width:100% !important}
-  .mbtn{display:block !important}
-  table{min-width:600px}
-}
-@media(max-width:600px){
-  .stats{grid-template-columns:repeat(2,1fr)}
-  .dpg{grid-template-columns:repeat(2,1fr)}
-  .ag{grid-template-columns:1fr}
-  .rc{grid-template-columns:1fr}
-  .fgrid{grid-template-columns:1fr 1fr}
+  /* Sidebar slides off screen */
+  .sidebar{
+    transform:translateX(-100%) !important;
+    position:fixed !important;
+    z-index:100 !important;
+  }
+  .sidebar.open{
+    transform:translateX(0) !important;
+  }
+  /* Main content takes full width */
+  .mw{
+    margin-left:0 !important;
+    width:100% !important;
+    min-width:0 !important;
+  }
+  /* Show hamburger */
+  .mbtn{display:flex !important}
+  /* Table scrolls horizontally */
+  .tw{overflow-x:auto !important;-webkit-overflow-scrolling:touch}
+  table{min-width:700px !important;width:auto !important}
+  /* Stats 2 columns */
+  .stats{grid-template-columns:repeat(2,1fr) !important}
+  /* Single column layouts */
+  .ag{grid-template-columns:1fr !important}
+  .rc{grid-template-columns:1fr !important}
+  /* Topbar */
+  .topbar{padding:0 14px !important;height:52px !important}
+  .live-pill{display:none}
+  /* Content */
+  .content{padding:12px !important}
+  /* Cards */
+  .stat{padding:11px 12px}
+  .sv{font-size:18px !important}
+  /* Goals */
   .gh{flex-direction:column;align-items:flex-start}
-  .gi-row{gap:6px}
-  .topbar{padding:0 14px}
-  .content{padding:12px}
-  .stats{gap:6px}
-  .stat{padding:10px 12px}
-  .sv{font-size:18px}
-  td,th{padding:8px 10px;font-size:11px}
-  .gc{padding:12px 14px}
-  .kw{padding:14px}
-  .cg{gap:3px}
-  .cd{min-height:48px;padding:4px 2px}
+  .gi-row{flex-wrap:wrap}
+  .gi{width:80px}
+  /* Calendar */
+  .cg{gap:3px !important}
+  .cd{min-height:46px !important;padding:4px 2px !important}
   .cdn{font-size:10px}
   .cpnl{font-size:9px}
+  /* Form */
+  .fgrid{grid-template-columns:1fr 1fr !important}
+  /* Table font */
+  td,th{padding:8px 10px !important;font-size:11px !important}
+  /* Panels */
+  .dpg{grid-template-columns:repeat(2,1fr) !important}
+  .kw{padding:14px !important}
+  /* Journal */
+  .jch{flex-wrap:wrap}
+  /* Setup */
+  .ob-t{font-size:20px !important}
+  /* RoR simulator */
+  .sr{flex-wrap:wrap}
+  .sl2{width:100% !important}
 }
 
 </style>
