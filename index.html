@@ -568,6 +568,7 @@ input[type=range]{accent-color:var(--ac);cursor:pointer;width:100%;flex:1}
       <div class="sb-a" onclick="go('weekly',this)"><span class="ic">📆</span> Weekly</div>
       <div class="sb-a" onclick="go('ror',this)"><span class="ic">🎯</span> Risk of Ruin</div>
       <div class="sb-a" onclick="go('playbooks',this)"><span class="ic">📋</span> Playbooks</div>
+      <div class="sb-a" onclick="go('tilt',this)"><span class="ic">🧠</span> Tilt Meter</div>
       <div class="sb-sec">Account</div>
       <div class="sb-a" onclick="go('apikeys',this)"><span class="ic">🔑</span> API Keys</div>
       <div class="sb-a" onclick="go('setup',this)"><span class="ic">⚡</span> Setup Guide</div>
@@ -638,6 +639,7 @@ input[type=range]{accent-color:var(--ac);cursor:pointer;width:100%;flex:1}
       <div id="tab-ror" style="display:none"></div>
       <div id="tab-apikeys" style="display:none"></div>
       <div id="tab-playbooks" style="display:none"></div>
+<div id="tab-tilt" style="display:none"></div>
 <div id="tab-setup" style="display:none"></div>
     </div>
   </div>
@@ -648,7 +650,7 @@ const SB_URL='https://vuxsxdirrwmbqntvkywi.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1eHN4ZGlycndtYnFudHZreXdpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzODI4NzEsImV4cCI6MjA5MDk1ODg3MX0.tqFK0W1fNqGqOx2jxQmtlY31acCekGj8pjYJr4D-YJ0';
 const EF=SB_URL+'/functions/v1/trade-tracker';
 let sb=null;
-const TITLES={trades:'Trades',journal:'Journal',analytics:'Analytics',calendar:'Calendar',daily:'Daily Breakdown',weekly:'Weekly Breakdown',ror:'Risk of Ruin',playbooks:'Playbooks',apikeys:'API Keys',setup:'Setup Guide'};
+const TITLES={trades:'Trades',journal:'Journal',analytics:'Analytics',calendar:'Calendar',daily:'Daily Breakdown',weekly:'Weekly Breakdown',ror:'Risk of Ruin',playbooks:'Playbooks',tilt:'Tilt Meter',apikeys:'API Keys',setup:'Setup Guide'};
 
 let user=null,trades=[],apiKeys=[],sub=null,tab='trades',selId=null;
 let calY=new Date().getFullYear(),calM=new Date().getMonth(),calSel=null;
@@ -780,7 +782,7 @@ function render(){
   renderStats();renderGoals();
   if(tab==='trades')renderTrades();else if(tab==='journal')renderJournal();else if(tab==='analytics')renderAnalytics();
   else if(tab==='calendar')renderCalendar();else if(tab==='daily')renderDaily();else if(tab==='weekly')renderWeekly();
-  else if(tab==='ror')renderRoR();else if(tab==='playbooks')renderPlaybooks();else if(tab==='apikeys')renderApiKeys();else if(tab==='setup')renderSetup();
+  else if(tab==='ror')renderRoR();else if(tab==='playbooks')renderPlaybooks();else if(tab==='tilt')renderTilt();else if(tab==='apikeys')renderApiKeys();else if(tab==='setup')renderSetup();
 }
 function renderGoals(){
   const s=getStats(),now=new Date(),ym=now.toISOString().slice(0,7),td=now.toISOString().slice(0,10);
@@ -1173,6 +1175,179 @@ async function removeScreenshot(id){
   await loadTrades();selectTrade(id);toast('Removed','ok');
 }
 
+function renderTilt(){
+  const el=document.getElementById('tab-tilt');
+  const cl=trades.filter(t=>t.status==='closed'||t.exit_price!=null).sort((a,b)=>new Date(a.open_time)-new Date(b.open_time));
+
+  if(cl.length<3){
+    el.innerHTML=`<div class="es"><div class="ei">🧠</div><div class="et">Not enough data</div><div class="ed">Need at least 3 closed trades to analyse your psychology patterns.</div></div>`;
+    return;
+  }
+
+  // --- ANALYSE PATTERNS ---
+  let revengeTrades=0, overtrading=0, tiltSequences=[], avgGap=0;
+  const gaps=[];
+
+  for(let i=1;i<cl.length;i++){
+    const prev=cl[i-1], curr=cl[i];
+    const prevCalc=calc(prev), currCalc=calc(curr);
+    const gap=(new Date(curr.open_time)-new Date(prev.close_time||prev.open_time))/60000; // minutes
+
+    if(gap>0)gaps.push(gap);
+
+    // Revenge trading: opened next trade very quickly after a loss (<15min)
+    const isRevenge=prevCalc.status==='loss' && gap>=0 && gap<15;
+    if(isRevenge)revengeTrades++;
+
+    // Overtrading: 3+ trades in same hour
+    const hr=new Date(curr.open_time).getUTCHours();
+    const samehr=cl.filter(t=>{
+      const d=new Date(t.open_time);
+      return d.toDateString()===new Date(curr.open_time).toDateString() && d.getUTCHours()===hr;
+    });
+    if(samehr.length>=3)overtrading++;
+
+    // Loss streak followed by bigger size
+    if(i>=2){
+      const pp=cl[i-2], p=cl[i-1], c=cl[i];
+      const ppc=calc(pp),pc=calc(p),cc=calc(c);
+      if(ppc.status==='loss' && pc.status==='loss' && c.lots>(p.lots*1.3)){
+        tiltSequences.push({date:(c.open_time||'').slice(0,10),symbol:c.symbol,lots:c.lots,prevLots:p.lots});
+      }
+    }
+  }
+
+  avgGap=gaps.length?gaps.reduce((a,b)=>a+b,0)/gaps.length:0;
+
+  // --- SCORES ---
+  const totalTrades=cl.length;
+  const revengePct=Math.round(revengeTrades/Math.max(totalTrades-1,1)*100);
+  const overtradingPct=Math.round(overtrading/totalTrades*100);
+
+  // Emotion analysis
+  const emotions={};
+  cl.forEach(t=>{if(t.emotion){if(!emotions[t.emotion])emotions[t.emotion]={total:0,wins:0,pnl:0};emotions[t.emotion].total++;const c=calc(t);if(c.status==='win')emotions[t.emotion].wins++;emotions[t.emotion].pnl+=(c.pnl||0);}});
+
+  // Grade analysis
+  const grades={};
+  cl.forEach(t=>{if(t.grade){if(!grades[t.grade])grades[t.grade]={total:0,wins:0,pnl:0};grades[t.grade].total++;const c=calc(t);if(c.status==='win')grades[t.grade].wins++;grades[t.grade].pnl+=(c.pnl||0);}});
+
+  // Psychology score (0-100)
+  let score=100;
+  score-=Math.min(40, revengePct*1.5);   // Revenge trading penalty
+  score-=Math.min(20, overtradingPct);    // Overtrading penalty
+  score-=Math.min(20, tiltSequences.length*5); // Size increase after loss
+  score=Math.max(0, Math.round(score));
+
+  const scoreColor=score>=75?'var(--green)':score>=50?'var(--amber)':'var(--red)';
+  const scoreLabel=score>=75?'Disciplined':'Tilt detected' ;
+  const scoreDesc=score>=75?'Your trading psychology looks healthy. Keep following your rules.':score>=50?'Some tilt patterns detected. Review the alerts below and adjust your habits.':'Significant tilt patterns found. Consider taking a break and reviewing your risk rules.';
+
+  // Streak analysis
+  let currentStreak=0, streakType='';
+  for(let i=cl.length-1;i>=0;i--){
+    const s=calc(cl[i]).status;
+    if(i===cl.length-1){streakType=s;currentStreak=1;}
+    else if(s===streakType)currentStreak++;
+    else break;
+  }
+
+  // Win rate after loss
+  const afterLoss=cl.filter((t,i)=>i>0&&calc(cl[i-1]).status==='loss');
+  const winsAfterLoss=afterLoss.filter(t=>calc(t).status==='win').length;
+  const warAfterLoss=afterLoss.length?Math.round(winsAfterLoss/afterLoss.length*100):null;
+
+  // Avg P&L by emotion
+  const emoRows=Object.entries(emotions).sort((a,b)=>b[1].pnl-a[1].pnl).map(([e,v])=>{
+    const col=v.pnl>=0?'var(--green)':'var(--red)';
+    const wr=Math.round(v.wins/v.total*100);
+    return`<div class="ar">
+      <span style="text-transform:capitalize">${e}</span>
+      <span style="color:var(--t2);font-size:11px">${v.total}T · ${wr}%WR</span>
+      <span style="font-family:var(--mono);color:${col}">${v.pnl>=0?'+':''}$${v.pnl.toFixed(2)}</span>
+    </div>`;
+  }).join('');
+
+  const gradeRows=Object.entries(grades).sort((a,b)=>a[0].localeCompare(b[0])).map(([g,v])=>{
+    const col=v.pnl>=0?'var(--green)':'var(--red)';
+    const wr=Math.round(v.wins/v.total*100);
+    return`<div class="ar">
+      <span>${gb(g)}</span>
+      <span style="color:var(--t2);font-size:11px">${v.total}T · ${wr}%WR</span>
+      <span style="font-family:var(--mono);color:${col}">${v.pnl>=0?'+':''}$${v.pnl.toFixed(2)}</span>
+    </div>`;
+  }).join('');
+
+  el.innerHTML=`
+    <!-- SCORE -->
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:20px;background:var(--card);border:1px solid var(--b1);border-radius:var(--r2);padding:24px;margin-bottom:12px;align-items:center">
+      <div style="text-align:center">
+        <div style="width:100px;height:100px;border-radius:50%;border:4px solid ${scoreColor};display:flex;align-items:center;justify-content:center;flex-direction:column;background:var(--bg2)">
+          <div style="font-size:28px;font-weight:800;font-family:var(--mono);color:${scoreColor}">${score}</div>
+          <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px">/ 100</div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:20px;font-weight:700;margin-bottom:4px;color:${scoreColor}">${scoreLabel}</div>
+        <div style="font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:12px">${scoreDesc}</div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap">
+          <div><div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px">Current streak</div><div style="font-size:16px;font-weight:700;font-family:var(--mono);color:${streakType==='win'?'var(--green)':'var(--red)'}">${currentStreak}${streakType==='win'?'W':'L'}</div></div>
+          <div><div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px">Avg gap between trades</div><div style="font-size:16px;font-weight:700;font-family:var(--mono)">${avgGap<60?avgGap.toFixed(0)+'m':(avgGap/60).toFixed(1)+'h'}</div></div>
+          ${warAfterLoss!==null?`<div><div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px">Win rate after a loss</div><div style="font-size:16px;font-weight:700;font-family:var(--mono);color:${warAfterLoss>=50?'var(--green)':'var(--red)'}">${warAfterLoss}%</div></div>`:''}
+        </div>
+      </div>
+    </div>
+
+    <!-- ALERTS -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-bottom:12px">
+      <div class="ac" style="border-color:${revengePct>20?'rgba(255,79,106,.3)':'var(--b1)'}">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div class="at">⚡ Revenge Trading</div>
+          <div style="font-size:18px;font-weight:800;font-family:var(--mono);color:${revengePct>20?'var(--red)':revengePct>10?'var(--amber)':'var(--green)'}">${revengePct}%</div>
+        </div>
+        <div style="font-size:12px;color:var(--t2);line-height:1.6">${revengeTrades} of your trades were opened within 15 minutes of a loss. ${revengePct>20?'⚠️ High risk of emotional trading.':revengePct>10?'Watch this carefully.':'Looking good!'}</div>
+        <div style="height:3px;background:var(--bg2);border-radius:2px;margin-top:10px;overflow:hidden"><div style="height:100%;width:${Math.min(revengePct,100)}%;background:${revengePct>20?'var(--red)':revengePct>10?'var(--amber)':'var(--green)'};border-radius:2px"></div></div>
+      </div>
+
+      <div class="ac" style="border-color:${tiltSequences.length>0?'rgba(255,79,106,.3)':'var(--b1)'}">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div class="at">📈 Size After Loss</div>
+          <div style="font-size:18px;font-weight:800;font-family:var(--mono);color:${tiltSequences.length>2?'var(--red)':tiltSequences.length>0?'var(--amber)':'var(--green)'}">${tiltSequences.length}x</div>
+        </div>
+        <div style="font-size:12px;color:var(--t2);line-height:1.6">${tiltSequences.length>0?`You increased position size after 2 consecutive losses ${tiltSequences.length} time${tiltSequences.length>1?'s':''}.`:'No size increases after consecutive losses detected.'} ${tiltSequences.length>2?'⚠️ Classic tilt pattern.':''}</div>
+      </div>
+
+      <div class="ac">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div class="at">🎭 P&L by Emotion</div>
+        </div>
+        ${emoRows||'<div style="color:var(--t2);font-size:12px">Tag your emotions in the journal to unlock this</div>'}
+      </div>
+
+      <div class="ac">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div class="at">🏆 P&L by Grade</div>
+        </div>
+        ${gradeRows||'<div style="color:var(--t2);font-size:12px">Grade your trades in the journal to unlock this</div>'}
+      </div>
+    </div>
+
+    ${tiltSequences.length>0?`
+    <div class="ac" style="margin-bottom:12px">
+      <div class="at">⚠️ Tilt events detected</div>
+      ${tiltSequences.map(s=>`
+        <div class="ar">
+          <span style="color:var(--t2)">${s.date}</span>
+          <span>${s.symbol}</span>
+          <span style="font-size:11px;color:var(--red)">Size increased ${s.lots} lots (was ${s.prevLots})</span>
+        </div>`).join('')}
+    </div>`:''}
+
+    <div class="ib b">
+      <strong>Tips to improve your score:</strong> Wait at least 15 minutes after a loss before opening the next trade. Never increase position size after 2 consecutive losses. Grade your A+ setups and only trade those.
+    </div>`;
+}
+
 function renderSetup(){
   const el=document.getElementById('tab-setup');
   const hasKey=apiKeys.length>0;
@@ -1258,7 +1433,7 @@ function go(t,el){
   document.querySelectorAll('.sb-a').forEach(b=>b.classList.remove('active'));
   if(el)el.classList.add('active');
   document.getElementById('page-title').textContent=TITLES[t]||t;
-  ['trades','journal','analytics','calendar','daily','weekly','ror','playbooks','apikeys','setup'].forEach(v=>{const el=document.getElementById('tab-'+v);el.style.display=v===t?'block':'none';});
+  ['trades','journal','analytics','calendar','daily','weekly','ror','playbooks','tilt','apikeys','setup'].forEach(v=>{const el=document.getElementById('tab-'+v);el.style.display=v===t?'block':'none';});
   const showTop=['trades','daily','weekly','analytics'].includes(t);
   document.getElementById('goals-sec').style.display=showTop?'block':'none';
   document.getElementById('stats-grid').style.display=showTop?'grid':'none';
