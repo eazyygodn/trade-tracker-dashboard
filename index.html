@@ -589,6 +589,9 @@ input[type=range]{accent-color:var(--ac);cursor:pointer;width:100%;flex:1}
         <div class="page-ttl" id="page-title">Trades</div>
       </div>
       <div class="tr-right">
+        <select id="account-filter" onchange="switchAccount(this.value)" style="background:var(--card);border:1px solid var(--b1);border-radius:var(--r);padding:5px 10px;color:var(--t1);font-size:12px;outline:none;font-family:var(--font);cursor:pointer">
+          <option value="all">All Accounts</option>
+        </select>
         <div class="lp"><div class="ld"></div><span id="sync-st">connecting</span></div>
         <button class="btn" onclick="exportCSV()" style="font-size:12px;padding:5px 11px">↓ CSV</button>
         <button class="btn-p" onclick="toggleForm()" id="btn-add" style="padding:7px 15px">+ Trade</button>
@@ -612,7 +615,8 @@ input[type=range]{accent-color:var(--ac);cursor:pointer;width:100%;flex:1}
         <div class="fc2">
           <div class="fs">log trade manually</div>
           <div class="fgrid">
-            <div><div class="fll">Symbol</div><input id="f-sym" type="text" placeholder="EURUSD" style="text-transform:uppercase"></div>
+            <div><div class="fll">Account</div><input id="f-acc" placeholder="e.g. Main, Prop Firm" list="acc-list"><datalist id="acc-list"></datalist></div>
+        <div><div class="fll">Symbol</div><input id="f-sym" type="text" placeholder="EURUSD" style="text-transform:uppercase"></div>
             <div><div class="fll">Market</div><select id="f-mkt"><option value="forex">Forex</option><option value="crypto">Crypto</option><option value="stocks">Stocks</option><option value="futures">Futures</option><option value="options">Options</option></select></div>
             <div><div class="fll">Direction</div><select id="f-dir"><option value="buy">Buy / Long</option><option value="sell">Sell / Short</option></select></div>
             <div><div class="fll">Date</div><input id="f-date" type="date"></div>
@@ -652,7 +656,7 @@ const EF=SB_URL+'/functions/v1/trade-tracker';
 let sb=null;
 const TITLES={trades:'Trades',journal:'Journal',analytics:'Analytics',calendar:'Calendar',daily:'Daily Breakdown',weekly:'Weekly Breakdown',ror:'Risk of Ruin',playbooks:'Playbooks',tilt:'Tilt Meter',apikeys:'API Keys',setup:'Setup Guide'};
 
-let user=null,trades=[],apiKeys=[],sub=null,tab='trades',selId=null;
+let user=null,trades=[],allTrades=[],apiKeys=[],sub=null,tab='trades',selId=null,activeAccount='all';
 let calY=new Date().getFullYear(),calM=new Date().getMonth(),calSel=null;
 let jG='all',jE='all';
 let goals={a:0,m:0,d:0};
@@ -710,7 +714,36 @@ async function register(){
 }
 async function signout(){await sb.auth.signOut();}
 
-async function loadTrades(){const{data,error}=await sb.from('trades').select('*').eq('user_id',user.id).order('open_time',{ascending:false});if(!error)trades=data||[];}
+async function loadTrades(){
+  const{data,error}=await sb.from('trades').select('*').eq('user_id',user.id).order('open_time',{ascending:false});
+  if(!error){
+    allTrades=data||[];
+    updateAccountFilter();
+    applyAccountFilter();
+  }
+}
+function updateAccDatalist(){
+  const dl=document.getElementById('acc-list');
+  if(!dl)return;
+  const accounts=[...new Set(allTrades.map(t=>t.account_label).filter(Boolean))];
+  dl.innerHTML=accounts.map(a=>`<option value="${a}">`).join('');
+}
+function updateAccountFilter(){
+  const sel=document.getElementById('account-filter');
+  if(!sel)return;
+  const accounts=[...new Set(allTrades.map(t=>t.account_label||'Default').filter(Boolean))];
+  const current=sel.value;
+  sel.innerHTML='<option value="all">All Accounts</option>'+accounts.map(a=>`<option value="${a}"${a===current?' selected':''}>${a}</option>`).join('');
+}
+function applyAccountFilter(){
+  if(activeAccount==='all')trades=allTrades;
+  else trades=allTrades.filter(t=>(t.account_label||'Default')===activeAccount);
+}
+function switchAccount(val){
+  activeAccount=val;
+  applyAccountFilter();
+  render();
+}
 async function loadApiKeys(){const{data}=await sb.from('api_keys').select('id,key_prefix,name,created_at,last_used_at').eq('user_id',user.id).order('created_at',{ascending:false});apiKeys=data||[];}
 
 function subscribeRT(){
@@ -804,7 +837,7 @@ function sb2(s){return`<span class="badge ${s}">${s}</span>`}
 function renderTrades(){
   const el=document.getElementById('tab-trades');
   if(!trades.length){el.innerHTML=`<div class="es"><div class="ei">📊</div><div class="et">No trades yet</div><div class="ed">Connect your MT4/MT5 EA to auto-log trades, or add one manually.</div><div class="eb"><button class="btn-p" onclick="go('setup',null)">⚡ Setup guide</button><button class="btn" onclick="toggleForm()">+ Log manually</button></div></div>`;return;}
-  el.innerHTML=`<div class="tw"><table><thead><tr><th>Date</th><th>Symbol</th><th>Dir</th><th>Entry</th><th>Exit</th><th>R:R</th><th>Risk%</th><th>P&L</th><th>Grade</th><th>Mood</th><th>Result</th><th></th></tr></thead><tbody>${[...trades].map(t=>{const{rr,pnl,status,rp}=calc(t);const pc=pnl==null?'':pnl>=0?'color:var(--green)':'color:var(--red)';const rpc=rp>2?'color:var(--red)':rp>1?'color:var(--amber)':'';return`<tr class="tr${selId===t.id?' sel':''}" onclick="selectTrade('${t.id}')"><td>${(t.open_time||'').slice(0,10)}</td><td style="font-weight:600">${t.symbol||''}</td><td class="${t.direction}">${t.direction}</td><td>${fmt(+t.entry_price)}</td><td>${t.exit_price!=null?fmt(+t.exit_price):'—'}</td><td><div style="display:flex;align-items:center;gap:4px"><span>${rr.toFixed(2)}</span><div style="height:3px;width:${Math.min(rr*11,40).toFixed(0)}px;background:var(--green);border-radius:2px"></div></div></td><td style="${rpc}">${rp>0?rp.toFixed(1)+'%':'—'}</td><td style="${pc}">${pnl!=null?(pnl>=0?'+':'')+'$'+Math.abs(pnl).toFixed(2):'—'}</td><td>${gb(t.grade)}</td><td>${eb(t.emotion)}</td><td>${sb2(status)}</td><td><button class="btn-x" onclick="event.stopPropagation();delTrade('${t.id}')">×</button></td></tr>`;}).join('')}</tbody></table></div>`;
+  el.innerHTML=`<div class="tw"><table><thead><tr><th>Date</th><th>Symbol</th><th>Dir</th><th>Entry</th><th>Exit</th><th>R:R</th><th>Risk%</th><th>P&L</th><th>Grade</th><th>Mood</th><th>Result</th><th></th></tr></thead><tbody>${[...trades].map(t=>{const{rr,pnl,status,rp}=calc(t);const pc=pnl==null?'':pnl>=0?'color:var(--green)':'color:var(--red)';const rpc=rp>2?'color:var(--red)':rp>1?'color:var(--amber)':'';return`<tr class="tr${selId===t.id?' sel':''}" onclick="selectTrade('${t.id}')"><td>${(t.open_time||'').slice(0,10)}</td><td style="font-weight:600">${t.symbol||''}<span style="font-size:9px;color:var(--t3);display:block;margin-top:1px">${t.account_label||''}</span></td><td class="${t.direction}">${t.direction}</td><td>${fmt(+t.entry_price)}</td><td>${t.exit_price!=null?fmt(+t.exit_price):'—'}</td><td><div style="display:flex;align-items:center;gap:4px"><span>${rr.toFixed(2)}</span><div style="height:3px;width:${Math.min(rr*11,40).toFixed(0)}px;background:var(--green);border-radius:2px"></div></div></td><td style="${rpc}">${rp>0?rp.toFixed(1)+'%':'—'}</td><td style="${pc}">${pnl!=null?(pnl>=0?'+':'')+'$'+Math.abs(pnl).toFixed(2):'—'}</td><td>${gb(t.grade)}</td><td>${eb(t.emotion)}</td><td>${sb2(status)}</td><td><button class="btn-x" onclick="event.stopPropagation();delTrade('${t.id}')">×</button></td></tr>`;}).join('')}</tbody></table></div>`;
 }
 function selectTrade(id){
   selId=selId===id?null:id;renderTrades();
@@ -1442,8 +1475,8 @@ function go(t,el){
 }
 function toggleSB(){const sb=document.getElementById('sidebar');const ov=document.getElementById('overlay');sb.classList.toggle('open');ov.style.display=sb.classList.contains('open')?'block':'none';}
 function closeSB(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').style.display='none';}
-function toggleForm(){const open=document.getElementById('trade-form').style.display==='none';document.getElementById('trade-form').style.display=open?'block':'none';document.getElementById('btn-add').textContent=open?'× Cancel':'+ Trade';if(open)document.getElementById('f-date').value=new Date().toISOString().split('T')[0];}
-function clearForm(){['f-sym','f-en','f-sl','f-tp','f-ex','f-lo','f-pr','f-no','f-pb'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('f-gr').value='';document.getElementById('f-em').value='';}
+function toggleForm(){updateAccDatalist();const open=document.getElementById('trade-form').style.display==='none';document.getElementById('trade-form').style.display=open?'block':'none';document.getElementById('btn-add').textContent=open?'× Cancel':'+ Trade';if(open)document.getElementById('f-date').value=new Date().toISOString().split('T')[0];}
+function clearForm(){['f-sym','f-en','f-sl','f-tp','f-ex','f-lo','f-pr','f-no','f-pb','f-acc'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('f-gr').value='';document.getElementById('f-em').value='';}
 function exportCSV(){
   if(!trades.length){toast('No trades to export','err');return;}
   const h=['date','symbol','market','direction','entry','sl','tp','exit','lots','profit','rr','risk_pct','grade','emotion','status','notes'];
