@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TTP Admin — Support Tickets</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#09090f;--s1:#13131f;--s2:#1a1a28;
+  --b1:rgba(255,255,255,.07);--b2:rgba(255,255,255,.12);
+  --t1:#f0f0f8;--t2:#9090b0;--t3:#50507a;
+  --ac:#00d4aa;--green:#00d4aa;--red:#ff4466;--amber:#ffaa00;--blue:#4488ff;
+  --font:'Plus Jakarta Sans',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;
+}
+body{background:var(--bg);color:var(--t1);font-family:var(--font);font-size:14px;min-height:100vh;-webkit-font-smoothing:antialiased}
+.topbar{height:54px;border-bottom:1px solid var(--b1);display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:var(--s1);position:sticky;top:0;z-index:10}
+.logo{font-size:16px;font-weight:800;letter-spacing:-.3px}
+.logo span{color:var(--ac)}
+.content{padding:24px;max-width:1000px;margin:0 auto}
+.card{background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:20px;margin-bottom:10px}
+.ticket-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:12px;flex-wrap:wrap}
+.ticket-subject{font-size:15px;font-weight:700}
+.ticket-meta{font-size:11px;color:var(--t3);margin-top:3px}
+.ticket-msg{font-size:13px;color:var(--t2);line-height:1.7;background:var(--bg);border-radius:8px;padding:12px;margin-bottom:12px}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;font-family:var(--mono)}
+.open{background:rgba(68,136,255,.1);color:var(--blue);border:1px solid rgba(68,136,255,.2)}
+.replied{background:rgba(0,212,170,.08);color:var(--green);border:1px solid rgba(0,212,170,.2)}
+.closed{background:rgba(255,255,255,.06);color:var(--t2);border:1px solid var(--b1)}
+.reply-area{display:flex;flex-direction:column;gap:8px}
+.reply-area textarea{width:100%;background:var(--bg);border:1px solid var(--b2);border-radius:8px;padding:10px 12px;color:var(--t1);font-size:13px;font-family:var(--font);resize:vertical;min-height:80px;outline:none}
+.reply-area textarea:focus{border-color:var(--ac)}
+.btn{background:var(--s2);border:1px solid var(--b2);border-radius:8px;padding:7px 14px;color:var(--t1);font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font)}
+.btn:hover{border-color:var(--b3)}
+.btn-p{background:var(--ac);border:none;border-radius:8px;padding:8px 18px;color:#050510;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)}
+.btn-p:hover{opacity:.88}
+.btn-sm{padding:4px 10px;font-size:11px}
+.filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.filter-btn{padding:5px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid var(--b1);color:var(--t2);background:none;font-family:var(--font);transition:.15s}
+.filter-btn:hover{border-color:var(--b2);color:var(--t1)}
+.filter-btn.active{background:rgba(0,212,170,.08);border-color:rgba(0,212,170,.25);color:var(--ac)}
+.stats-row{display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+.stat-box{background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:12px 16px;text-align:center;min-width:100px}
+.stat-n{font-size:24px;font-weight:700;font-family:var(--mono)}
+.stat-l{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin-top:3px}
+.existing-reply{background:rgba(0,212,170,.06);border:1px solid rgba(0,212,170,.15);border-radius:8px;padding:12px;font-size:13px;line-height:1.65;margin-bottom:10px}
+input{background:var(--bg);border:1px solid var(--b2);border-radius:8px;padding:10px 14px;color:var(--t1);font-size:14px;outline:none;font-family:var(--font);width:100%;margin-bottom:16px}
+input:focus{border-color:var(--ac)}
+.auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center}
+.auth-card{background:var(--s1);border:1px solid var(--b2);border-radius:14px;padding:36px;width:100%;max-width:360px}
+.auth-title{font-size:20px;font-weight:800;margin-bottom:6px}
+.auth-sub{font-size:13px;color:var(--t2);margin-bottom:24px}
+</style>
+</head>
+<body>
+<div id="auth-view" class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-title">Admin Panel</div>
+    <div class="auth-sub">Trade Tracker Pro — Support Tickets</div>
+    <input type="email" id="adm-email" placeholder="Email">
+    <input type="password" id="adm-pass" placeholder="Password" onkeydown="if(event.key==='Enter')adminLogin()">
+    <button class="btn-p" onclick="adminLogin()" style="width:100%;padding:12px">Sign in</button>
+    <div id="adm-err" style="color:var(--red);font-size:12px;margin-top:10px"></div>
+  </div>
+</div>
+
+<div id="admin-view" style="display:none">
+  <div class="topbar">
+    <div class="logo">TTP <span>Admin</span></div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span id="adm-user" style="font-size:12px;color:var(--t2)"></span>
+      <button class="btn btn-sm" onclick="adminLogout()">Sign out</button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="stats-row" id="adm-stats"></div>
+    <div class="filters">
+      <span style="font-size:12px;color:var(--t3);font-weight:600;margin-right:4px">FILTER:</span>
+      <button class="filter-btn active" onclick="filterTickets('all',this)">All</button>
+      <button class="filter-btn" onclick="filterTickets('open',this)">Open</button>
+      <button class="filter-btn" onclick="filterTickets('replied',this)">Replied</button>
+      <button class="filter-btn" onclick="filterTickets('closed',this)">Closed</button>
+    </div>
+    <div id="tickets-list"></div>
+  </div>
+</div>
+
+<script>
+const SB_URL='https://vuxsxdirrwmbqntvkywi.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1eHN4ZGlycndtYnFudHZreXdpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzODI4NzEsImV4cCI6MjA5MDk1ODg3MX0.tqFK0W1fNqGqOx2jxQmtlY31acCekGj8pjYJr4D-YJ0';
+const {createClient}=supabase;
+const sb=createClient(SB_URL,SB_KEY);
+
+let allTickets=[], currentFilter='all';
+
+async function adminLogin(){
+  const email=document.getElementById('adm-email').value;
+  const pass=document.getElementById('adm-pass').value;
+  const{data,error}=await sb.auth.signInWithPassword({email,password:pass});
+  if(error){document.getElementById('adm-err').textContent=error.message;return;}
+  document.getElementById('adm-user').textContent=data.user.email;
+  document.getElementById('auth-view').style.display='none';
+  document.getElementById('admin-view').style.display='block';
+  loadTickets();
+}
+
+async function adminLogout(){
+  await sb.auth.signOut();
+  location.reload();
+}
+
+async function loadTickets(){
+  const{data}=await sb.from('support_tickets').select('*').order('created_at',{ascending:false});
+  allTickets=data||[];
+  renderStats();
+  renderTickets();
+}
+
+function renderStats(){
+  const open=allTickets.filter(t=>t.status==='open').length;
+  const replied=allTickets.filter(t=>t.status==='replied').length;
+  const closed=allTickets.filter(t=>t.status==='closed').length;
+  document.getElementById('adm-stats').innerHTML=`
+    <div class="stat-box"><div class="stat-n" style="color:var(--blue)">${open}</div><div class="stat-l">Open</div></div>
+    <div class="stat-box"><div class="stat-n" style="color:var(--green)">${replied}</div><div class="stat-l">Replied</div></div>
+    <div class="stat-box"><div class="stat-n">${closed}</div><div class="stat-l">Closed</div></div>
+    <div class="stat-box"><div class="stat-n">${allTickets.length}</div><div class="stat-l">Total</div></div>`;
+}
+
+function filterTickets(status, btn){
+  currentFilter=status;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTickets();
+}
+
+function renderTickets(){
+  const filtered=currentFilter==='all'?allTickets:allTickets.filter(t=>t.status===currentFilter);
+  const el=document.getElementById('tickets-list');
+  if(!filtered.length){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--t2)">No tickets found</div>';return;}
+  el.innerHTML=filtered.map(t=>`
+    <div class="card" id="ticket-${t.id}">
+      <div class="ticket-header">
+        <div>
+          <div class="ticket-subject">${t.subject}</div>
+          <div class="ticket-meta">${(t.created_at||'').slice(0,16).replace('T',' ')} · ${t.email||'unknown'} · ${t.category||'general'}</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          <span class="badge ${t.status}">${t.status}</span>
+          ${t.status!=='closed'?`<button class="btn btn-sm" onclick="closeTicket('${t.id}')">Close</button>`:''}
+        </div>
+      </div>
+      <div class="ticket-msg">${t.message}</div>
+      ${t.admin_reply?`<div style="font-size:10px;color:var(--ac);font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px">Your reply</div><div class="existing-reply">${t.admin_reply}</div>`:''}
+      ${t.status!=='closed'?`
+      <div class="reply-area">
+        <textarea id="reply-${t.id}" placeholder="Write your reply...">${t.admin_reply||''}</textarea>
+        <div style="display:flex;gap:8px">
+          <button class="btn-p" onclick="sendReply('${t.id}')">Send reply</button>
+          <div id="reply-ok-${t.id}" style="font-size:12px;color:var(--green);display:none;align-items:center">✓ Sent!</div>
+        </div>
+      </div>`:''}
+    </div>`).join('');
+}
+
+async function sendReply(id){
+  const reply=document.getElementById('reply-'+id)?.value?.trim();
+  if(!reply)return;
+  await sb.from('support_tickets').update({admin_reply:reply,status:'replied',replied_at:new Date().toISOString()}).eq('id',id);
+  const okEl=document.getElementById('reply-ok-'+id);
+  if(okEl){okEl.style.display='flex';}
+  await loadTickets();
+}
+
+async function closeTicket(id){
+  await sb.from('support_tickets').update({status:'closed'}).eq('id',id);
+  await loadTickets();
+}
+
+// Check if already logged in
+sb.auth.getSession().then(({data:{session}})=>{
+  if(session?.user){
+    document.getElementById('adm-user').textContent=session.user.email;
+    document.getElementById('auth-view').style.display='none';
+    document.getElementById('admin-view').style.display='block';
+    loadTickets();
+  }
+});
+</script>
+</body>
+</html>
