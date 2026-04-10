@@ -519,6 +519,8 @@ input[type=range]{accent-color:var(--ac);cursor:pointer;width:100%;flex:1}
       <div class="sb-sec">Account</div>
       <div class="sb-a" onclick="go('apikeys',this)"><span class="ic">🔑</span> API Keys</div>
       <div class="sb-a" onclick="go('setup',this)"><span class="ic">⚡</span> Setup Guide</div>
+      <div class="sb-a" onclick="go('support',this)"><span class="ic">💬</span> Support</div>
+      <div class="sb-a" onclick="go('ai',this)"><span class="ic">🤖</span> AI Assistant</div>
     </nav>
     <div class="sb-bot">
       <div class="sb-user">
@@ -589,7 +591,9 @@ input[type=range]{accent-color:var(--ac);cursor:pointer;width:100%;flex:1}
       <div id="tab-weekly" style="display:none"></div>
       <div id="tab-ror" style="display:none"></div>
       <div id="tab-apikeys" style="display:none"></div>
-      <div id="tab-overview" style="display:none"></div>
+      <div id="tab-support" style="display:none"></div>
+<div id="tab-ai" style="display:none"></div>
+<div id="tab-overview" style="display:none"></div>
 <div id="tab-playbooks" style="display:none"></div>
 <div id="tab-tilt" style="display:none"></div>
 <div id="tab-setup" style="display:none"></div>
@@ -602,7 +606,7 @@ const SB_URL='https://vuxsxdirrwmbqntvkywi.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1eHN4ZGlycndtYnFudHZreXdpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzODI4NzEsImV4cCI6MjA5MDk1ODg3MX0.tqFK0W1fNqGqOx2jxQmtlY31acCekGj8pjYJr4D-YJ0';
 const EF=SB_URL+'/functions/v1/trade-tracker';
 let sb=null;
-const TITLES={overview:'Overview',trades:'Trades',journal:'Journal',analytics:'Analytics',calendar:'Calendar',daily:'Daily Breakdown',weekly:'Weekly Breakdown',ror:'Risk of Ruin',playbooks:'Playbooks',tilt:'Tilt Meter',apikeys:'API Keys',setup:'Setup Guide'};
+const TITLES={overview:'Overview',trades:'Trades',support:'Support',ai:'AI Assistant',journal:'Journal',analytics:'Analytics',calendar:'Calendar',daily:'Daily Breakdown',weekly:'Weekly Breakdown',ror:'Risk of Ruin',playbooks:'Playbooks',tilt:'Tilt Meter',apikeys:'API Keys',setup:'Setup Guide'};
 
 let user=null,trades=[],allTrades=[],apiKeys=[],sub=null,tab='trades',selId=null,activeAccount='all';
 let calY=new Date().getFullYear(),calM=new Date().getMonth(),calSel=null;
@@ -766,7 +770,7 @@ function getStats(){
 
 function render(){
   renderStats();renderGoals();
-  if(tab==='overview')renderOverview();else if(tab==='trades')renderTrades();else if(tab==='journal')renderJournal();else if(tab==='analytics')renderAnalytics();
+  if(tab==='overview')renderOverview();else if(tab==='support')renderSupport();else if(tab==='ai')renderAI();else if(tab==='trades')renderTrades();else if(tab==='journal')renderJournal();else if(tab==='analytics')renderAnalytics();
   else if(tab==='calendar')renderCalendar();else if(tab==='daily')renderDaily();else if(tab==='weekly')renderWeekly();
   else if(tab==='ror')renderRoR();else if(tab==='playbooks')renderPlaybooks();else if(tab==='tilt')renderTilt();else if(tab==='apikeys')renderApiKeys();else if(tab==='setup')renderSetup();
 }
@@ -920,6 +924,196 @@ function renderOverview(){
       <div style="font-size:11px;color:var(--t2)">${a.desc}</div>
     </div>`).join('')}
   </div>`;
+}
+
+function renderSupport(){
+  const el=document.getElementById('tab-support');
+  el.innerHTML=`
+    <div style="max-width:680px">
+      <div style="margin-bottom:24px">
+        <div style="font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:6px">Support</div>
+        <div style="font-size:14px;color:var(--t2)">Having an issue or a question? Send us a message and we'll get back to you as soon as possible.</div>
+      </div>
+
+      <div style="background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);padding:24px;margin-bottom:16px">
+        <div id="support-success" style="display:none" class="ib g"><strong>✓ Ticket submitted!</strong> We'll reply to your email within 24 hours.</div>
+        <div id="support-form">
+          <div style="margin-bottom:14px">
+            <div style="font-size:10px;color:var(--t3);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:6px">Subject</div>
+            <input id="sup-subject" placeholder="e.g. EA not syncing trades" style="width:100%;background:var(--bg);border:1px solid var(--b2);border-radius:var(--r);padding:10px 14px;color:var(--t1);font-size:14px;outline:none;font-family:var(--font);transition:.15s" onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--b2)'">
+          </div>
+          <div style="margin-bottom:14px">
+            <div style="font-size:10px;color:var(--t3);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:6px">Category</div>
+            <select id="sup-cat" style="width:100%;background:var(--bg);border:1px solid var(--b2);border-radius:var(--r);padding:10px 14px;color:var(--t1);font-size:14px;outline:none;font-family:var(--font)">
+              <option value="setup">Setup & Installation</option>
+              <option value="sync">Trade sync issue</option>
+              <option value="feature">Feature request</option>
+              <option value="bug">Bug report</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div style="margin-bottom:20px">
+            <div style="font-size:10px;color:var(--t3);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:6px">Message</div>
+            <textarea id="sup-msg" placeholder="Describe your issue in detail — include your MT4/MT5 version, what you tried, and what happened..." style="width:100%;background:var(--bg);border:1px solid var(--b2);border-radius:var(--r);padding:10px 14px;color:var(--t1);font-size:14px;outline:none;font-family:var(--font);resize:vertical;min-height:120px;line-height:1.6;transition:.15s" onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--b2)'"></textarea>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+            <div style="font-size:12px;color:var(--t3)">Replies go to: <span style="color:var(--t1)">${user.email}</span></div>
+            <button class="btn-p" onclick="submitTicket()" style="padding:10px 28px">Send message</button>
+          </div>
+          <div id="sup-err" style="color:var(--red);font-size:12px;margin-top:10px;display:none"></div>
+        </div>
+      </div>
+
+      <!-- MY TICKETS -->
+      <div id="my-tickets-wrap"></div>
+    </div>`;
+  loadMyTickets();
+}
+
+async function loadMyTickets(){
+  const{data}=await sb.from('support_tickets').select('*').eq('user_id',user.id).order('created_at',{ascending:false});
+  const el=document.getElementById('my-tickets-wrap');
+  if(!el)return;
+  if(!data||!data.length){el.innerHTML='';return;}
+  el.innerHTML=`<div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--t1)">Your previous tickets</div>`+
+  data.map(t=>`
+    <div style="background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);padding:16px;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px">
+        <div style="font-size:14px;font-weight:600">${t.subject}</div>
+        <span class="badge ${t.status==='open'?'open':t.status==='replied'?'win':'be'}">${t.status}</span>
+      </div>
+      <div style="font-size:12px;color:var(--t2);margin-bottom:${t.admin_reply?'12px':'0'}">${(t.created_at||'').slice(0,10)} · ${t.category||'General'}</div>
+      ${t.admin_reply?`<div style="background:var(--ac-dim);border:1px solid var(--ac-bdr);border-radius:var(--r);padding:12px;font-size:13px;line-height:1.65;color:var(--t1)"><span style="font-size:10px;color:var(--ac);font-weight:700;letter-spacing:.5px;text-transform:uppercase;display:block;margin-bottom:6px">Reply from support</span>${t.admin_reply}</div>`:''}
+    </div>`).join('');
+}
+
+async function submitTicket(){
+  const subject=document.getElementById('sup-subject').value.trim();
+  const message=document.getElementById('sup-msg').value.trim();
+  const category=document.getElementById('sup-cat').value;
+  const errEl=document.getElementById('sup-err');
+  errEl.style.display='none';
+  if(!subject){errEl.textContent='Please enter a subject.';errEl.style.display='block';return;}
+  if(message.length<20){errEl.textContent='Please describe your issue in more detail.';errEl.style.display='block';return;}
+  const{error}=await sb.from('support_tickets').insert({
+    user_id:user.id,email:user.email,subject,message,category,status:'open'
+  });
+  if(error){errEl.textContent='Failed to send: '+error.message;errEl.style.display='block';return;}
+  document.getElementById('support-form').style.display='none';
+  document.getElementById('support-success').style.display='block';
+  loadMyTickets();
+}
+
+function renderAI(){
+  const el=document.getElementById('tab-ai');
+  const s=getStats();
+  const cl=trades.filter(t=>t.status==='closed'||t.exit_price!=null);
+
+  // Build context string from user's trading data
+  const ctx=`The user has ${trades.length} total trades (${cl.length} closed, ${trades.filter(t=>t.status==='open').length} open).
+Win rate: ${s.wr.toFixed(1)}%. Avg R:R: ${s.aRR.toFixed(2)}. Profit factor: ${s.pf.toFixed(2)}.
+Total P&L: $${s.total.toFixed(2)}. Max drawdown: $${Math.abs(s.maxDD).toFixed(2)}.
+Symbols traded: ${[...new Set(trades.map(t=>t.symbol))].join(', ')}.
+Recent trades: ${cl.slice(0,5).map(t=>`${t.symbol} ${t.direction} ${t.profit>=0?'+':''}$${(t.profit||0).toFixed(2)}`).join(', ')}.`;
+
+  el.innerHTML=`
+    <div style="max-width:720px;display:flex;flex-direction:column;height:calc(100vh - 140px)">
+      <div style="margin-bottom:16px">
+        <div style="font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px">AI Assistant</div>
+        <div style="font-size:13px;color:var(--t2)">Ask anything about your trading performance, psychology, or strategy.</div>
+      </div>
+
+      <!-- CHAT MESSAGES -->
+      <div id="ai-msgs" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding-right:4px;margin-bottom:14px">
+        <div style="background:var(--s2);border:1px solid var(--b1);border-radius:var(--r2);padding:14px 16px;font-size:13px;line-height:1.7;color:var(--t2)">
+          👋 Hi! I have access to your trading data. I can help you analyse your performance, identify patterns, explain your stats, or give advice on your trading psychology.<br><br>
+          <span style="color:var(--t1)">Try asking:</span><br>
+          <span onclick="askAI('What are my biggest weaknesses as a trader?')" style="color:var(--ac);cursor:pointer;display:block;margin-top:4px">→ What are my biggest weaknesses as a trader?</span>
+          <span onclick="askAI('Which session am I most profitable in?')" style="color:var(--ac);cursor:pointer;display:block;margin-top:4px">→ Which session am I most profitable in?</span>
+          <span onclick="askAI('Am I revenge trading?')" style="color:var(--ac);cursor:pointer;display:block;margin-top:4px">→ Am I revenge trading?</span>
+          <span onclick="askAI('How can I improve my win rate?')" style="color:var(--ac);cursor:pointer;display:block;margin-top:4px">→ How can I improve my win rate?</span>
+        </div>
+      </div>
+
+      <!-- INPUT -->
+      <div style="display:flex;gap:8px;align-items:flex-end">
+        <textarea id="ai-input" placeholder="Ask about your trading performance..." style="flex:1;background:var(--s1);border:1px solid var(--b2);border-radius:var(--r2);padding:11px 14px;color:var(--t1);font-size:14px;outline:none;font-family:var(--font);resize:none;height:48px;line-height:1.5;transition:.15s;overflow:hidden" onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--b2)'" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();askAI()}" oninput="this.style.height='48px';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
+        <button class="btn-p" onclick="askAI()" style="padding:11px 20px;height:48px;flex-shrink:0">Send</button>
+      </div>
+      <div style="font-size:11px;color:var(--t3);margin-top:8px">Powered by Claude · Your trade data is included as context · Press Enter to send</div>
+    </div>`;
+
+  // Store context for AI calls
+  window._aiCtx = ctx;
+  window._aiHistory = [];
+}
+
+function addAIMsg(role, text){
+  const container = document.getElementById('ai-msgs');
+  if(!container) return;
+  const isUser = role === 'user';
+  const div = document.createElement('div');
+  div.style.cssText = `display:flex;flex-direction:column;align-items:${isUser?'flex-end':'flex-start'}`;
+  div.innerHTML = `<div style="max-width:85%;background:${isUser?'var(--ac)':'var(--s2)'};color:${isUser?'#050510':'var(--t1)'};border:1px solid ${isUser?'transparent':'var(--b1)'};border-radius:${isUser?'12px 12px 3px 12px':'12px 12px 12px 3px'};padding:11px 14px;font-size:13px;line-height:1.7;white-space:pre-wrap">${text}</div>`;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+async function askAI(preset){
+  const input = document.getElementById('ai-input');
+  const question = preset || (input ? input.value.trim() : '');
+  if(!question) return;
+  if(input) {input.value='';input.style.height='48px';}
+
+  addAIMsg('user', question);
+
+  // Loading indicator
+  const container = document.getElementById('ai-msgs');
+  const loadDiv = document.createElement('div');
+  loadDiv.id = 'ai-loading';
+  loadDiv.innerHTML = '<div style="background:var(--s2);border:1px solid var(--b1);border-radius:12px 12px 12px 3px;padding:11px 14px;font-size:13px;color:var(--t2)"><span class="spin"></span>Thinking...</div>';
+  container.appendChild(loadDiv);
+  container.scrollTop = container.scrollHeight;
+
+  // Push to history
+  window._aiHistory.push({role:'user', content: question});
+
+  try {
+    const systemPrompt = `You are an expert trading coach and analyst embedded in Trade Tracker Pro, a trading journal dashboard. You have access to the user's real trading data:
+
+${window._aiCtx}
+
+Be specific, data-driven, and actionable. Reference their actual stats when relevant. Keep responses concise but insightful — 2-4 paragraphs max. Don't be generic. If you spot a pattern in their data, call it out directly. You are not a financial advisor — don't give specific trade recommendations.`;
+
+    const messages = [
+      ...window._aiHistory.slice(-8), // Keep last 8 messages for context
+    ];
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: messages
+      })
+    });
+
+    const data = await response.json();
+    const reply = data.content?.[0]?.text || 'Sorry, I could not generate a response.';
+
+    // Remove loading
+    document.getElementById('ai-loading')?.remove();
+
+    // Add response to history and display
+    window._aiHistory.push({role:'assistant', content: reply});
+    addAIMsg('assistant', reply);
+
+  } catch(e) {
+    document.getElementById('ai-loading')?.remove();
+    addAIMsg('assistant', 'Sorry, something went wrong. Please try again.');
+  }
 }
 
 function renderGoals(){
@@ -1677,7 +1871,7 @@ function go(t,el){
   document.querySelectorAll('.sb-a').forEach(b=>b.classList.remove('active'));
   if(el)el.classList.add('active');
   document.getElementById('page-title').textContent=TITLES[t]||t;
-  ['overview','trades','journal','analytics','calendar','daily','weekly','ror','playbooks','tilt','apikeys','setup'].forEach(v=>{const el=document.getElementById('tab-'+v);el.style.display=v===t?'block':'none';});
+  ['overview','trades','journal','analytics','calendar','daily','weekly','ror','playbooks','tilt','apikeys','setup','support','ai'].forEach(v=>{const el=document.getElementById('tab-'+v);el.style.display=v===t?'block':'none';});
   const showTop=['trades','daily','weekly','analytics'].includes(t);
   document.getElementById('goals-sec').style.display=showTop?'block':'none';
   document.getElementById('stats-grid').style.display=showTop?'grid':'none';
