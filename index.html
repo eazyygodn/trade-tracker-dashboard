@@ -636,7 +636,8 @@ input[type=range]{accent-color:var(--ac);cursor:pointer;width:100%;flex:1}
       <div id="tab-weekly" style="display:none"></div>
       <div id="tab-ror" style="display:none"></div>
       <div id="tab-apikeys" style="display:none"></div>
-      <div id="tab-setup" style="display:none"></div>
+      <div id="tab-playbooks" style="display:none"></div>
+<div id="tab-setup" style="display:none"></div>
     </div>
   </div>
 </div>
@@ -646,7 +647,7 @@ const SB_URL='https://vuxsxdirrwmbqntvkywi.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1eHN4ZGlycndtYnFudHZreXdpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzODI4NzEsImV4cCI6MjA5MDk1ODg3MX0.tqFK0W1fNqGqOx2jxQmtlY31acCekGj8pjYJr4D-YJ0';
 const EF=SB_URL+'/functions/v1/trade-tracker';
 let sb=null;
-const TITLES={trades:'Trades',journal:'Journal',analytics:'Analytics',calendar:'Calendar',daily:'Daily Breakdown',weekly:'Weekly Breakdown',ror:'Risk of Ruin',apikeys:'API Keys',setup:'Setup Guide'};
+const TITLES={trades:'Trades',journal:'Journal',analytics:'Analytics',calendar:'Calendar',daily:'Daily Breakdown',weekly:'Weekly Breakdown',ror:'Risk of Ruin',playbooks:'Playbooks',apikeys:'API Keys',setup:'Setup Guide'};
 
 let user=null,trades=[],apiKeys=[],sub=null,tab='trades',selId=null;
 let calY=new Date().getFullYear(),calM=new Date().getMonth(),calSel=null;
@@ -738,9 +739,10 @@ async function delTrade(id){
 }
 async function saveNotes(id){
   const notes=document.getElementById('ea-notes').value,grade=document.getElementById('ea-grade').value,emotion=document.getElementById('ea-emo').value;
-  const{error}=await sb.from('trades').update({notes,grade,emotion}).eq('id',id).eq('user_id',user.id);
+  const setupEl=document.getElementById('ea-setup');const setup=setupEl?setupEl.value||null:null;
+  const{error}=await sb.from('trades').update({notes,grade,emotion,setup}).eq('id',id).eq('user_id',user.id);
   if(error){toast('Error','err');return;}
-  toast('Saved','ok');selectTrade(id);
+  await loadTrades();toast('Saved','ok');selectTrade(id);
 }
 
 function loadGoals(){const g=JSON.parse(localStorage.getItem('ttp_g_'+(user?.id||''))||'{}');goals={a:g.a||0,m:g.m||0,d:g.d||0};document.getElementById('g-a').value=goals.a||'';document.getElementById('g-m').value=goals.m||'';document.getElementById('g-d').value=goals.d||'';}
@@ -777,7 +779,7 @@ function render(){
   renderStats();renderGoals();
   if(tab==='trades')renderTrades();else if(tab==='journal')renderJournal();else if(tab==='analytics')renderAnalytics();
   else if(tab==='calendar')renderCalendar();else if(tab==='daily')renderDaily();else if(tab==='weekly')renderWeekly();
-  else if(tab==='ror')renderRoR();else if(tab==='apikeys')renderApiKeys();else if(tab==='setup')renderSetup();
+  else if(tab==='ror')renderRoR();else if(tab==='playbooks')renderPlaybooks();else if(tab==='apikeys')renderApiKeys();else if(tab==='setup')renderSetup();
 }
 function renderGoals(){
   const s=getStats(),now=new Date(),ym=now.toISOString().slice(0,7),td=now.toISOString().slice(0,10);
@@ -808,7 +810,7 @@ function selectTrade(id){
   const t=trades.find(x=>x.id===id);if(!t)return;
   const{rr,pnl,status,rp}=calc(t),pc=pnl!=null?`color:${pnl>=0?'var(--green)':'var(--red)'}`:'';
   dp.style.display='block';
-  dp.innerHTML=`<div class="dp"><div class="dph"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-family:var(--font);font-size:17px;font-weight:700">${t.symbol}</span><span class="${t.direction}">${t.direction}</span>${gb(t.grade)}${eb(t.emotion)}${sb2(status)}</div><button class="btn-x" style="font-size:20px" onclick="selectTrade('${id}')">×</button></div><div class="dpg"><div class="dpb"><div class="dl">Market</div><div class="dv">${t.market||'—'}</div></div><div class="dpb"><div class="dl">Date</div><div class="dv">${(t.open_time||'').slice(0,10)}</div></div><div class="dpb"><div class="dl">Entry</div><div class="dv">${fmt(+t.entry_price)}</div></div><div class="dpb"><div class="dl">Stop Loss</div><div class="dv">${t.stop_loss?fmt(+t.stop_loss):'—'}</div></div><div class="dpb"><div class="dl">Take Profit</div><div class="dv">${t.take_profit?fmt(+t.take_profit):'—'}</div></div><div class="dpb"><div class="dl">Exit</div><div class="dv">${t.exit_price!=null?fmt(+t.exit_price):'still open'}</div></div><div class="dpb"><div class="dl">Lots</div><div class="dv">${t.lots||1}</div></div><div class="dpb"><div class="dl">R:R</div><div class="dv">${rr.toFixed(2)}</div></div><div class="dpb"><div class="dl">Risk %</div><div class="dv" style="${rp>2?'color:var(--red)':rp>1?'color:var(--amber)':''}">${rp>0?rp.toFixed(2)+'%':'—'}</div></div><div class="dpb"><div class="dl">P&L</div><div class="dv" style="${pc}">${pnl!=null?(pnl>=0?'+':'')+'$'+pnl.toFixed(2):'open'}</div></div></div>${t.notes?`<div class="dl" style="margin-bottom:6px">Notes</div><div class="nb">${t.notes}</div>`:''}<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" style="font-size:12px" onclick="document.getElementById('ea-${id}').style.display=document.getElementById('ea-${id}').style.display==='none'?'block':'none'">✏️ Edit notes & grade</button></div><div class="ea" id="ea-${id}"><textarea id="ea-notes" placeholder="Add notes...">${t.notes||''}</textarea><div class="ea-row"><select id="ea-grade"><option value="">— Grade</option>${['A','B','C','D'].map(g=>`<option value="${g}"${t.grade===g?' selected':''}>${g}</option>`).join('')}</select><select id="ea-emo"><option value="">— Emotion</option>${['calm','confident','anxious','fomo','revenge','bored'].map(e=>`<option value="${e}"${t.emotion===e?' selected':''}>${e}</option>`).join('')}</select><button class="btn-p" style="font-size:12px;padding:6px 13px" onclick="saveNotes('${id}')">Save</button><button class="btn" style="font-size:12px" onclick="document.getElementById('ea-${id}').style.display='none'">Cancel</button></div></div></div>`;
+  dp.innerHTML=`<div class="dp"><div class="dph"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-family:var(--font);font-size:17px;font-weight:700">${t.symbol}</span><span class="${t.direction}">${t.direction}</span>${gb(t.grade)}${eb(t.emotion)}${sb2(status)}</div><button class="btn-x" style="font-size:20px" onclick="selectTrade('${id}')">×</button></div><div class="dpg"><div class="dpb"><div class="dl">Market</div><div class="dv">${t.market||'—'}</div></div><div class="dpb"><div class="dl">Date</div><div class="dv">${(t.open_time||'').slice(0,10)}</div></div><div class="dpb"><div class="dl">Entry</div><div class="dv">${fmt(+t.entry_price)}</div></div><div class="dpb"><div class="dl">Stop Loss</div><div class="dv">${t.stop_loss?fmt(+t.stop_loss):'—'}</div></div><div class="dpb"><div class="dl">Take Profit</div><div class="dv">${t.take_profit?fmt(+t.take_profit):'—'}</div></div><div class="dpb"><div class="dl">Exit</div><div class="dv">${t.exit_price!=null?fmt(+t.exit_price):'still open'}</div></div><div class="dpb"><div class="dl">Lots</div><div class="dv">${t.lots||1}</div></div><div class="dpb"><div class="dl">R:R</div><div class="dv">${rr.toFixed(2)}</div></div><div class="dpb"><div class="dl">Risk %</div><div class="dv" style="${rp>2?'color:var(--red)':rp>1?'color:var(--amber)':''}">${rp>0?rp.toFixed(2)+'%':'—'}</div></div><div class="dpb"><div class="dl">P&L</div><div class="dv" style="${pc}">${pnl!=null?(pnl>=0?'+':'')+'$'+pnl.toFixed(2):'open'}</div></div></div>${t.notes?`<div class="dl" style="margin-bottom:6px">Notes</div><div class="nb">${t.notes}</div>`:''}<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" style="font-size:12px" onclick="document.getElementById('ea-${id}').style.display=document.getElementById('ea-${id}').style.display==='none'?'block':'none'">✏️ Edit notes & grade</button></div><div class="ea" id="ea-${id}"><textarea id="ea-notes" placeholder="Add notes...">${t.notes||''}</textarea><div style="margin-bottom:8px"><input id="ea-setup" style="width:100%;background:var(--bg2);border:1px solid var(--b2);border-radius:var(--r);padding:8px 10px;color:var(--t1);font-size:13px;outline:none;font-family:var(--font)" placeholder="Setup / Playbook (e.g. Break & Retest)" value="${t.setup||''}"></div><div class="ea-row"><select id="ea-grade"><option value="">— Grade</option>${['A','B','C','D'].map(g=>`<option value="${g}"${t.grade===g?' selected':''}>${g}</option>`).join('')}</select><select id="ea-emo"><option value="">— Emotion</option>${['calm','confident','anxious','fomo','revenge','bored'].map(e=>`<option value="${e}"${t.emotion===e?' selected':''}>${e}</option>`).join('')}</select><button class="btn-p" style="font-size:12px;padding:6px 13px" onclick="saveNotes('${id}')">Save</button><button class="btn" style="font-size:12px" onclick="document.getElementById('ea-${id}').style.display='none'">Cancel</button></div></div></div>`;
 }
 function renderJournal(){
   const el=document.getElementById('tab-journal');
@@ -1063,6 +1065,86 @@ function copyLastKey(){
 }
 function gotoApiKeys(){go('apikeys',null);}
 function gotoSetup(){go('setup',null);}
+function renderPlaybooks(){
+  const el=document.getElementById('tab-playbooks');
+  const cl=trades.filter(t=>t.status==='closed'||t.exit_price!=null);
+
+  // Group by setup tag
+  const bySetup={};
+  cl.forEach(t=>{
+    const key=t.setup||'Untagged';
+    if(!bySetup[key])bySetup[key]={trades:[],pnl:0,wins:0,losses:0,be:0,rrs:[]};
+    const c=calc(t);
+    bySetup[key].trades.push({...t,...c});
+    bySetup[key].pnl+=(c.pnl||0);
+    if(c.status==='win')bySetup[key].wins++;
+    else if(c.status==='loss')bySetup[key].losses++;
+    else bySetup[key].be++;
+    if(c.rr>0)bySetup[key].rrs.push(c.rr);
+  });
+
+  const setups=Object.entries(bySetup).sort((a,b)=>b[1].pnl-a[1].pnl);
+
+  // Get all unique setups for datalist
+  const setupNames=Object.keys(bySetup).filter(s=>s!=='Untagged');
+  const pbList=document.getElementById('pb-list');
+  if(pbList)pbList.innerHTML=setupNames.map(s=>`<option value="${s}">`).join('');
+
+  if(!cl.length){
+    el.innerHTML=`<div class="es"><div class="ei">📋</div><div class="et">No closed trades yet</div><div class="ed">Close some trades and tag them with a setup name to see your playbook stats.</div></div>`;
+    return;
+  }
+
+  const card=(name,data)=>{
+    const total=data.wins+data.losses+data.be;
+    const wr=total?(data.wins/total*100).toFixed(1):0;
+    const avgRR=data.rrs.length?(data.rrs.reduce((a,b)=>a+b,0)/data.rrs.length).toFixed(2):'—';
+    const col=data.pnl>=0?'var(--green)':'var(--red)';
+    const pf=data.losses>0?(data.wins*Math.abs(data.pnl/data.losses||1)/Math.abs(data.pnl/data.wins||1)).toFixed(2):'∞';
+    return`<div class="ac" style="border:1px solid var(--b1)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:2px">${name}</div>
+          <div style="font-size:11px;color:var(--t2)">${total} trades · ${wr}% win rate</div>
+        </div>
+        <div style="font-size:20px;font-weight:800;font-family:var(--mono);color:${col}">${data.pnl>=0?'+':''}$${Math.abs(data.pnl).toFixed(2)}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px">
+        ${[['Wins',data.wins,'pos'],['Losses',data.losses,'neg'],['Avg R:R',avgRR,'info'],['BE',data.be,'warn']].map(([l,v,c])=>`
+          <div style="background:var(--bg2);border-radius:var(--r);padding:8px;text-align:center">
+            <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px">${l}</div>
+            <div style="font-size:16px;font-weight:700;font-family:var(--mono)" class="${c}">${v}</div>
+          </div>`).join('')}
+      </div>
+      <div style="height:3px;background:var(--bg2);border-radius:2px;overflow:hidden">
+        <div style="height:100%;width:${wr}%;background:${col};border-radius:2px;transition:width .5s"></div>
+      </div>
+      <div style="margin-top:12px;border-top:1px solid var(--b1);padding-top:10px">
+        <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Recent trades</div>
+        ${data.trades.slice(-3).reverse().map(t=>`
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--b1);font-size:12px">
+            <span style="color:var(--t2)">${(t.open_time||'').slice(0,10)}</span>
+            <span class="${t.direction}">${t.direction}</span>
+            <span class="badge ${t.status}">${t.status}</span>
+            <span style="font-family:var(--mono);color:${(t.pnl||0)>=0?'var(--green)':'var(--red)'}">${(t.pnl||0)>=0?'+':''}$${Math.abs(t.pnl||0).toFixed(2)}</span>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  };
+
+  el.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <div>
+        <div style="font-size:18px;font-weight:700;margin-bottom:2px">Playbooks</div>
+        <div style="font-size:13px;color:var(--t2)">Tag trades with a setup name to track which strategies work best</div>
+      </div>
+      ${setupNames.length===0?`<div class="ib b" style="margin:0;font-size:12px"><strong>Tip:</strong> When adding a trade manually, fill in the Setup field. For EA trades, edit the trade in Journal to add a setup tag.</div>`:''}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px">
+      ${setups.map(([name,data])=>card(name,data)).join('')}
+    </div>`;
+}
+
 function renderSetup(){
   const el=document.getElementById('tab-setup');
   const hasKey=apiKeys.length>0;
@@ -1148,7 +1230,7 @@ function go(t,el){
   document.querySelectorAll('.sb-a').forEach(b=>b.classList.remove('active'));
   if(el)el.classList.add('active');
   document.getElementById('page-title').textContent=TITLES[t]||t;
-  ['trades','journal','analytics','calendar','daily','weekly','ror','apikeys','setup'].forEach(v=>{const el=document.getElementById('tab-'+v);el.style.display=v===t?'block':'none';});
+  ['trades','journal','analytics','calendar','daily','weekly','ror','playbooks','apikeys','setup'].forEach(v=>{const el=document.getElementById('tab-'+v);el.style.display=v===t?'block':'none';});
   const showTop=['trades','daily','weekly','analytics'].includes(t);
   document.getElementById('goals-sec').style.display=showTop?'block':'none';
   document.getElementById('stats-grid').style.display=showTop?'grid':'none';
@@ -1158,7 +1240,7 @@ function go(t,el){
 function toggleSB(){const sb=document.getElementById('sidebar');const ov=document.getElementById('overlay');sb.classList.toggle('open');ov.style.display=sb.classList.contains('open')?'block':'none';}
 function closeSB(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').style.display='none';}
 function toggleForm(){const open=document.getElementById('trade-form').style.display==='none';document.getElementById('trade-form').style.display=open?'block':'none';document.getElementById('btn-add').textContent=open?'× Cancel':'+ Trade';if(open)document.getElementById('f-date').value=new Date().toISOString().split('T')[0];}
-function clearForm(){['f-sym','f-en','f-sl','f-tp','f-ex','f-lo','f-pr','f-no'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-gr').value='';document.getElementById('f-em').value='';}
+function clearForm(){['f-sym','f-en','f-sl','f-tp','f-ex','f-lo','f-pr','f-no','f-pb'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('f-gr').value='';document.getElementById('f-em').value='';}
 function exportCSV(){
   if(!trades.length){toast('No trades to export','err');return;}
   const h=['date','symbol','market','direction','entry','sl','tp','exit','lots','profit','rr','risk_pct','grade','emotion','status','notes'];
