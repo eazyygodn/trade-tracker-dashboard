@@ -507,7 +507,6 @@ input[type=range]{accent-color:var(--ac);cursor:pointer;width:100%;flex:1}
       <div class="sb-sec">Overview</div>
       <div class="sb-a" onclick="go('overview',this)"><span class="ic">🏠</span> Home</div>
       <div class="sb-a active" onclick="go('trades',this)"><span class="ic">📊</span> Trades</div>
-      <div class="sb-a" onclick="go('import',this)"><span class="ic">📥</span> Import Trades</div>
       <div class="sb-a" onclick="go('journal',this)"><span class="ic">📓</span> Journal</div>
       <div class="sb-a" onclick="go('analytics',this)"><span class="ic">📈</span> Analytics</div>
       <div class="sb-a" onclick="go('calendar',this)"><span class="ic">📅</span> Calendar</div>
@@ -544,6 +543,7 @@ input[type=range]{accent-color:var(--ac);cursor:pointer;width:100%;flex:1}
         <div class="lp"><div class="ld"></div><span id="sync-st">connecting</span></div>
         <button class="btn" onclick="exportCSV()" style="font-size:12px;padding:5px 11px">↓ CSV</button>
         <button class="btn-p" onclick="toggleForm()" id="btn-add" style="padding:7px 15px">+ Trade</button>
+      <button class="btn" onclick="go('import',null)" style="font-size:12px">📥 Import</button>
       </div>
     </div>
     <div class="content">
@@ -1110,7 +1110,7 @@ Be specific, data-driven, and actionable. Reference their actual stats when rele
 function renderImport(){
   const el=document.getElementById('tab-import');
   el.innerHTML=`
-    <div style="max-width:760px">
+    <div>
       <div style="margin-bottom:24px">
         <div style="font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:6px">Import Trades</div>
         <div style="font-size:14px;color:var(--t2);line-height:1.7">Switch from another platform? Import your full trade history in seconds. We support exports from TradeZella, Tradervue, Myfxbook, MT5 history reports, and any standard CSV format.</div>
