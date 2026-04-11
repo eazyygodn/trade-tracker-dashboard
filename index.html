@@ -635,6 +635,7 @@ async function startApp(){
   loadGoals();
   await Promise.all([loadTrades(),loadApiKeys()]);
   subscribeRT();
+  checkUnreadReplies();
   const newUser=trades.length===0&&apiKeys.length===0;
   if(newUser){go('setup',document.querySelector('.sb-a:nth-last-child(1)'));return;}
   render();
@@ -1905,6 +1906,11 @@ function toggleSupport(){
     aiWidgetOpen=false;
     document.getElementById('ai-widget').style.display='none';
     w.style.display='block';
+    // Mark all replied tickets as read
+    sb.from('support_tickets').select('id').eq('user_id',user.id).eq('status','replied').then(({data})=>{
+      data?.forEach(t=>localStorage.setItem('ttp_read_'+t.id,'1'));
+      document.getElementById('sup-badge').style.display='none';
+    });
   } else {
     w.style.display='none';
   }
@@ -1989,7 +1995,8 @@ function analyseQuery(q){
     if(!issues.length)return `Your metrics look solid — ${s.wr.toFixed(1)}% win rate, ${s.aRR.toFixed(2)} R:R, ${s.pf.toFixed(2)} profit factor. Focus on consistency and tagging setups in Playbooks to find your true edge.`;
     return `Based on your ${ca.length} closed trades, here are your key areas to improve:
 
-    const issueList=issues.map((iss,i)=>(i+1)+'. '+iss).join('\n\n');return 'Based on your '+ca.length+' closed trades, here are your key areas to improve:\n\n'+issueList+'\n\nFix these one at a time.';
+    let issueText='';for(let i=0;i<issues.length;i++)issueText+=(i+1)+'. '+issues[i]+(i<issues.length-1?'\n\n':'');
+    return 'Based on your '+ca.length+' closed trades, here are your key areas to improve:\n\n'+issueText+'\n\nFix these one at a time, starting with the biggest P&L impact.';
 
 ')}
 
@@ -2120,6 +2127,23 @@ async function submitWidgetTicket(){
   }
   document.getElementById('sup-widget-form').style.display='none';
   document.getElementById('sup-widget-success').style.display='block';
+}
+
+async function checkUnreadReplies(){
+  if(!user)return;
+  const{data}=await sb.from('support_tickets')
+    .select('id,admin_reply,status')
+    .eq('user_id',user.id)
+    .eq('status','replied');
+  const badge=document.getElementById('sup-badge');
+  if(!badge)return;
+  const unread=data?.filter(t=>t.admin_reply&&!localStorage.getItem('ttp_read_'+t.id))||[];
+  if(unread.length>0){
+    badge.style.display='flex';
+    badge.textContent=unread.length;
+  } else {
+    badge.style.display='none';
+  }
 }
 
 if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",init);}else{init();}
