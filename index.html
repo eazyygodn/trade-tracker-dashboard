@@ -1116,20 +1116,34 @@ function renderImport(){
         <div style="font-size:14px;color:var(--t2);line-height:1.7">Switch from another platform? Import your full trade history in seconds. We support exports from TradeZella, Tradervue, Myfxbook, MT5 history reports, and any standard CSV format.</div>
       </div>
 
-      <!-- PLATFORM CARDS -->
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:24px">
+      <!-- PLATFORM GUIDES -->
+      <div style="margin-bottom:20px" id="platform-guides">
         ${[
-          {name:'TradeZella',icon:'📊',hint:'Trades tab → select all → Bulk Actions → Export trades to CSV → Select All columns → Download'},
-          {name:'Tradervue',icon:'📈',hint:'Trades → Export → Download CSV'},
-          {name:'Myfxbook',icon:'📉',hint:'Statement → Export → CSV format'},
-          {name:'MT5 History',icon:'🖥️',hint:'Account History tab → right-click → Save as Detailed Report (.htm or .csv)'},
-          {name:'Edgewonk',icon:'📋',hint:'Statistics → Export → CSV'},
-          {name:'Any CSV / Excel',icon:'📄',hint:'Must include: Symbol, Direction, Entry Price, P&L columns. Save as .csv'},
-        ].map(p=>`<div style="background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);padding:14px;transition:.15s" onmouseover="this.style.borderColor='var(--ac-bdr)'" onmouseout="this.style.borderColor='var(--b1)'">
-          <div style="font-size:22px;margin-bottom:6px">${p.icon}</div>
-          <div style="font-size:13px;font-weight:700;margin-bottom:4px">${p.name}</div>
-          <div style="font-size:11px;color:var(--t3);line-height:1.5">${p.hint}</div>
-        </div>`).join('')}
+          {name:'TradeZella',icon:'📊',steps:['Go to the <strong>Trades</strong> tab in the left menu','Click the checkbox at the top to <strong>select all trades</strong>','Click <strong>Bulk Actions</strong> button (top right of table)','Choose <strong>Export trades to CSV</strong>','In the popup — click <strong>Select All</strong> to include all columns','Click <strong>Download Trades</strong> — file saves to your Downloads folder','Come back here and drop the file in the box below']},
+          {name:'MT5 History',icon:'🖥️',steps:['Open MT5 → click the <strong>History</strong> tab at the bottom','Right-click anywhere in the history table','Select <strong>Save as Report</strong> or <strong>Save as Detailed Report</strong>','Choose location and save as <strong>.csv</strong> or <strong>.htm</strong>','Drop the file below — we handle both formats']},
+          {name:'Myfxbook',icon:'📉',steps:['Log in to <strong>myfxbook.com</strong>','Go to your account → click <strong>Statement</strong>','Click <strong>Export</strong> → select <strong>CSV</strong> format','Download the file and drop it below']},
+          {name:'Tradervue',icon:'📈',steps:['Log in to <strong>tradervue.com</strong>','Go to <strong>Trades</strong> in the top menu','Click <strong>Export</strong> (top right)','Select date range → click <strong>Download CSV</strong>','Drop the file below']},
+          {name:'Edgewonk',icon:'📋',steps:['Open <strong>Edgewonk</strong> → go to <strong>Trading Journal</strong>','Click <strong>Export</strong> in the top menu','Choose <strong>CSV</strong> format → download','Drop the file below']},
+          {name:'Excel / Google Sheets',icon:'📄',steps:['Make sure your spreadsheet has these columns: <strong>Date, Symbol, Direction (buy/sell), Entry Price, Exit Price, P&L</strong>','In Excel: <strong>File → Save As → CSV</strong>','In Google Sheets: <strong>File → Download → CSV</strong>','Drop the file below']},
+        ].map((p,idx)=>`
+          <div style="background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);margin-bottom:6px;overflow:hidden">
+            <div onclick="toggleGuide(${idx})" style="padding:14px 18px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:.15s" onmouseover="this.style.background='var(--s2)'" onmouseout="this.style.background='transparent'">
+              <div style="display:flex;align-items:center;gap:12px">
+                <span style="font-size:20px">${p.icon}</span>
+                <span style="font-size:14px;font-weight:700">${p.name}</span>
+              </div>
+              <span id="guide-arrow-${idx}" style="color:var(--t3);font-size:12px;transition:.2s">▼</span>
+            </div>
+            <div id="guide-${idx}" style="display:none;padding:0 18px 16px;border-top:1px solid var(--b1)">
+              <div style="padding-top:14px">
+                ${p.steps.map((step,i)=>`
+                  <div style="display:flex;gap:12px;margin-bottom:10px;align-items:flex-start">
+                    <div style="width:22px;height:22px;border-radius:50%;background:var(--ac-dim);border:1px solid var(--ac-bdr);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--ac);flex-shrink:0;margin-top:1px">${i+1}</div>
+                    <div style="font-size:13px;color:var(--t2);line-height:1.6">${step}</div>
+                  </div>`).join('')}
+              </div>
+            </div>
+          </div>`).join('')}
       </div>
 
       <!-- UPLOAD AREA -->
@@ -1387,6 +1401,25 @@ async function confirmImport(){
   
   document.getElementById('import-preview').style.display='none';
   toast(imported+' trades imported!','ok');
+}
+
+function toggleGuide(idx){
+  const guide=document.getElementById('guide-'+idx);
+  const arrow=document.getElementById('guide-arrow-'+idx);
+  if(!guide)return;
+  const isOpen=guide.style.display!=='none';
+  // Close all
+  [0,1,2,3,4,5].forEach(i=>{
+    const g=document.getElementById('guide-'+i);
+    const a=document.getElementById('guide-arrow-'+i);
+    if(g)g.style.display='none';
+    if(a)a.style.transform='rotate(0deg)';
+  });
+  // Open clicked if was closed
+  if(!isOpen){
+    guide.style.display='block';
+    if(arrow)arrow.style.transform='rotate(180deg)';
+  }
 }
 
 function renderGoals(){
