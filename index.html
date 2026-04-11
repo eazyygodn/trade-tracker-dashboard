@@ -507,6 +507,7 @@ input[type=range]{accent-color:var(--ac);cursor:pointer;width:100%;flex:1}
       <div class="sb-sec">Overview</div>
       <div class="sb-a" onclick="go('overview',this)"><span class="ic">🏠</span> Home</div>
       <div class="sb-a active" onclick="go('trades',this)"><span class="ic">📊</span> Trades</div>
+      <div class="sb-a" onclick="go('import',this)"><span class="ic">📥</span> Import Trades</div>
       <div class="sb-a" onclick="go('journal',this)"><span class="ic">📓</span> Journal</div>
       <div class="sb-a" onclick="go('analytics',this)"><span class="ic">📈</span> Analytics</div>
       <div class="sb-a" onclick="go('calendar',this)"><span class="ic">📅</span> Calendar</div>
@@ -590,7 +591,8 @@ input[type=range]{accent-color:var(--ac);cursor:pointer;width:100%;flex:1}
       <div id="tab-weekly" style="display:none"></div>
       <div id="tab-ror" style="display:none"></div>
       <div id="tab-apikeys" style="display:none"></div>
-      <div id="tab-support" style="display:none"></div>
+      <div id="tab-import" style="display:none"></div>
+<div id="tab-support" style="display:none"></div>
 <div id="tab-ai" style="display:none"></div>
 <div id="tab-overview" style="display:none"></div>
 <div id="tab-playbooks" style="display:none"></div>
@@ -605,7 +607,7 @@ const SB_URL='https://vuxsxdirrwmbqntvkywi.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1eHN4ZGlycndtYnFudHZreXdpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzODI4NzEsImV4cCI6MjA5MDk1ODg3MX0.tqFK0W1fNqGqOx2jxQmtlY31acCekGj8pjYJr4D-YJ0';
 const EF=SB_URL+'/functions/v1/trade-tracker';
 let sb=null;
-const TITLES={overview:'Overview',trades:'Trades',support:'Support',ai:'AI Assistant',journal:'Journal',analytics:'Analytics',calendar:'Calendar',daily:'Daily Breakdown',weekly:'Weekly Breakdown',ror:'Risk of Ruin',playbooks:'Playbooks',tilt:'Tilt Meter',apikeys:'API Keys',setup:'Setup Guide'};
+const TITLES={overview:'Overview',trades:'Trades',import:'Import Trades',support:'Support',ai:'AI Assistant',journal:'Journal',analytics:'Analytics',calendar:'Calendar',daily:'Daily Breakdown',weekly:'Weekly Breakdown',ror:'Risk of Ruin',playbooks:'Playbooks',tilt:'Tilt Meter',apikeys:'API Keys',setup:'Setup Guide'};
 
 let user=null,trades=[],allTrades=[],apiKeys=[],sub=null,tab='trades',selId=null,activeAccount='all';
 let calY=new Date().getFullYear(),calM=new Date().getMonth(),calSel=null;
@@ -1103,6 +1105,282 @@ Be specific, data-driven, and actionable. Reference their actual stats when rele
     document.getElementById('ai-loading')?.remove();
     addAIMsg('assistant', 'Sorry, something went wrong. Please try again.');
   }
+}
+
+function renderImport(){
+  const el=document.getElementById('tab-import');
+  el.innerHTML=`
+    <div style="max-width:760px">
+      <div style="margin-bottom:24px">
+        <div style="font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:6px">Import Trades</div>
+        <div style="font-size:14px;color:var(--t2);line-height:1.7">Switch from another platform? Import your full trade history in seconds. We support exports from TradeZella, Tradervue, Myfxbook, MT5 history reports, and any standard CSV format.</div>
+      </div>
+
+      <!-- PLATFORM CARDS -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:24px">
+        ${[
+          {name:'TradeZella',icon:'📊',hint:'Export: Reports → Trade History → CSV'},
+          {name:'Tradervue',icon:'📈',hint:'Export: Trades → Export → CSV'},
+          {name:'Myfxbook',icon:'📉',hint:'Export: Statement → CSV'},
+          {name:'MT5 History',icon:'🖥️',hint:'MT5: Account History → right-click → Save Report'},
+          {name:'Excel / Google Sheets',icon:'📋',hint:'Save as CSV format'},
+          {name:'Any CSV',icon:'📄',hint:'Date, Symbol, Direction, Entry, Exit, P&L columns'},
+        ].map(p=>`<div style="background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);padding:14px;transition:.15s" onmouseover="this.style.borderColor='var(--ac-bdr)'" onmouseout="this.style.borderColor='var(--b1)'">
+          <div style="font-size:22px;margin-bottom:6px">${p.icon}</div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:4px">${p.name}</div>
+          <div style="font-size:11px;color:var(--t3);line-height:1.5">${p.hint}</div>
+        </div>`).join('')}
+      </div>
+
+      <!-- UPLOAD AREA -->
+      <div id="import-drop" style="background:var(--s1);border:2px dashed var(--b2);border-radius:var(--r2);padding:40px;text-align:center;cursor:pointer;transition:.2s;margin-bottom:16px"
+        onclick="document.getElementById('import-file').click()"
+        ondragover="event.preventDefault();this.style.borderColor='var(--ac)';this.style.background='var(--ac-dim)'"
+        ondragleave="this.style.borderColor='var(--b2)';this.style.background='var(--s1)'"
+        ondrop="event.preventDefault();this.style.borderColor='var(--b2)';this.style.background='var(--s1)';handleImportFile(event.dataTransfer.files[0])">
+        <div style="font-size:36px;margin-bottom:12px">📥</div>
+        <div style="font-size:15px;font-weight:700;margin-bottom:6px">Drop your CSV file here</div>
+        <div style="font-size:13px;color:var(--t2);margin-bottom:16px">or click to browse</div>
+        <button class="btn-p" onclick="event.stopPropagation();document.getElementById('import-file').click()">Choose file</button>
+        <input type="file" id="import-file" accept=".csv,.txt" style="display:none" onchange="handleImportFile(this.files[0])">
+      </div>
+
+      <!-- PREVIEW TABLE -->
+      <div id="import-preview" style="display:none">
+        <div style="background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);overflow:hidden;margin-bottom:14px">
+          <div style="padding:14px 18px;border-bottom:1px solid var(--b1);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+            <div>
+              <div style="font-size:14px;font-weight:700" id="import-title">Preview</div>
+              <div style="font-size:12px;color:var(--t2);margin-top:2px" id="import-subtitle"></div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn" onclick="renderImport()">← Start over</button>
+              <button class="btn-p" id="import-confirm-btn" onclick="confirmImport()">Import all trades</button>
+            </div>
+          </div>
+          <div style="overflow-x:auto">
+            <table style="min-width:100%">
+              <thead><tr id="import-thead"></tr></thead>
+              <tbody id="import-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div id="import-warnings" style="margin-bottom:14px"></div>
+      </div>
+
+      <!-- RESULT -->
+      <div id="import-result" style="display:none"></div>
+    </div>`;
+}
+
+let importedRows = [];
+
+function handleImportFile(file){
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const text=e.target.result;
+    parseCSV(text, file.name);
+  };
+  reader.readAsText(file);
+}
+
+function parseCSV(text, filename){
+  // Split into lines, handle different line endings
+  const lines=text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n').filter(l=>l.trim());
+  if(lines.length<2){toast('File appears empty','err');return;}
+
+  // Parse header
+  const header=splitCSVLine(lines[0]).map(h=>h.toLowerCase().trim().replace(/['"]/g,''));
+  
+  // Detect platform from headers
+  const platform=detectPlatform(header, filename);
+  
+  // Map columns
+  const colMap=mapColumns(header, platform);
+  
+  // Parse rows
+  const rows=[];
+  const warnings=[];
+  
+  for(let i=1;i<lines.length;i++){
+    const cells=splitCSVLine(lines[i]);
+    if(cells.length<3)continue;
+    
+    try{
+      const row=extractTrade(cells, header, colMap, platform);
+      if(row)rows.push(row);
+    }catch(e){
+      warnings.push('Row '+(i+1)+': '+e.message);
+    }
+  }
+  
+  importedRows=rows;
+  showImportPreview(rows, warnings, platform);
+}
+
+function splitCSVLine(line){
+  const result=[];
+  let current='';
+  let inQuotes=false;
+  for(let i=0;i<line.length;i++){
+    if(line[i]==='"')inQuotes=!inQuotes;
+    else if((line[i]===','||line[i]===';'||line[i]==='\t')&&!inQuotes){result.push(current.trim());current='';}
+    else current+=line[i];
+  }
+  result.push(current.trim());
+  return result.map(c=>c.replace(/^"|"$/g,'').trim());
+}
+
+function detectPlatform(header, filename){
+  const fn=(filename||'').toLowerCase();
+  const h=header.join(',');
+  if(fn.includes('tradezella')||h.includes('net p&l')||h.includes('net pnl'))return 'tradezella';
+  if(fn.includes('tradervue')||h.includes('buysell')||h.includes('buy/sell'))return 'tradervue';
+  if(fn.includes('myfxbook')||h.includes('pips')||h.includes('commission'))return 'myfxbook';
+  if(h.includes('deal')||h.includes('position id'))return 'mt5';
+  return 'generic';
+}
+
+function mapColumns(header, platform){
+  const find=(...keys)=>{for(const k of keys){const i=header.findIndex(h=>h.includes(k));if(i>=0)return i;}return -1;};
+  return {
+    symbol:   find('symbol','pair','instrument','currency'),
+    direction:find('direction','type','side','buysell','buy/sell','action'),
+    entry:    find('entry','open price','price open','entry price','open'),
+    exit:     find('exit','close price','price close','exit price','close price'),
+    profit:   find('profit','p&l','pnl','net p&l','gain','result'),
+    lots:     find('lots','volume','size','qty','quantity'),
+    openTime: find('open time','date open','open date','entry time','time'),
+    closeTime:find('close time','date close','close date','exit time'),
+    sl:       find('stop loss','sl','stoploss'),
+    tp:       find('take profit','tp','takeprofit'),
+  };
+}
+
+function extractTrade(cells, header, colMap, platform){
+  const get=(idx,def='')=>idx>=0&&idx<cells.length?cells[idx].replace(/[,$]/g,'').trim():def;
+  
+  const symbol=get(colMap.symbol);
+  if(!symbol)return null;
+  
+  let direction=get(colMap.direction,'').toLowerCase();
+  if(direction.includes('buy')||direction.includes('long'))direction='buy';
+  else if(direction.includes('sell')||direction.includes('short'))direction='sell';
+  else direction='buy';
+  
+  const entry=parseFloat(get(colMap.entry,'0'))||0;
+  const exit=parseFloat(get(colMap.exit,''))||null;
+  const profit=parseFloat(get(colMap.profit,''))||null;
+  const lots=parseFloat(get(colMap.lots,'0.01'))||0.01;
+  const sl=parseFloat(get(colMap.sl,'0'))||0;
+  const tp=parseFloat(get(colMap.tp,'0'))||0;
+  
+  let openTime=get(colMap.openTime,'');
+  let closeTime=get(colMap.closeTime,'')||null;
+  
+  // Parse date
+  if(openTime){
+    try{openTime=new Date(openTime).toISOString();}catch(e){openTime=new Date().toISOString();}
+  } else openTime=new Date().toISOString();
+  
+  if(closeTime){
+    try{closeTime=new Date(closeTime).toISOString();}catch(e){closeTime=null;}
+  }
+  
+  const status=exit!=null||closeTime?'closed':'open';
+  
+  return{
+    user_id:user.id,
+    symbol:symbol.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,10),
+    direction,
+    entry_price:entry,
+    exit_price:exit,
+    stop_loss:sl,
+    take_profit:tp,
+    lots,
+    profit,
+    open_time:openTime,
+    close_time:closeTime,
+    status,
+    ticket:Math.floor(Math.random()*9000000+1000000),
+    account_label:'Imported'
+  };
+}
+
+function showImportPreview(rows, warnings, platform){
+  if(!rows.length){
+    toast('No valid trades found in file. Check the format.','err');
+    return;
+  }
+  
+  document.getElementById('import-drop').style.display='none';
+  const preview=document.getElementById('import-preview');
+  preview.style.display='block';
+  
+  document.getElementById('import-title').textContent=rows.length+' trades ready to import';
+  document.getElementById('import-subtitle').textContent='Platform detected: '+platform+' · All trades will be tagged as "Imported" account';
+  
+  // Header
+  const thead=document.getElementById('import-thead');
+  thead.innerHTML=['Date','Symbol','Dir','Entry','Exit','P&L','Lots','Status'].map(h=>`<th>${h}</th>`).join('');
+  
+  // Body - show first 20 rows
+  const tbody=document.getElementById('import-tbody');
+  tbody.innerHTML=rows.slice(0,20).map(r=>{
+    const pc=r.profit==null?'':r.profit>=0?'color:var(--green)':'color:var(--red)';
+    return`<tr>
+      <td>${(r.open_time||'').slice(0,10)}</td>
+      <td style="font-weight:600">${r.symbol}</td>
+      <td class="${r.direction}">${r.direction}</td>
+      <td>${r.entry_price||'—'}</td>
+      <td>${r.exit_price||'—'}</td>
+      <td style="${pc}">${r.profit!=null?(r.profit>=0?'+':'')+'$'+Math.abs(r.profit).toFixed(2):'—'}</td>
+      <td>${r.lots}</td>
+      <td><span class="badge ${r.status}">${r.status}</span></td>
+    </tr>`;
+  }).join('');
+  
+  if(rows.length>20){
+    tbody.innerHTML+=`<tr><td colspan="8" style="text-align:center;color:var(--t2);padding:12px">... and ${rows.length-20} more trades</td></tr>`;
+  }
+  
+  // Warnings
+  const warnEl=document.getElementById('import-warnings');
+  if(warnings.length){
+    warnEl.innerHTML=`<div class="ib b"><strong>⚠️ ${warnings.length} rows skipped</strong> — ${warnings.slice(0,3).join(' · ')}</div>`;
+  }
+}
+
+async function confirmImport(){
+  const btn=document.getElementById('import-confirm-btn');
+  if(!importedRows.length)return;
+  btn.textContent='Importing...';
+  btn.disabled=true;
+  
+  // Insert in batches of 50
+  let imported=0,failed=0;
+  const batchSize=50;
+  
+  for(let i=0;i<importedRows.length;i+=batchSize){
+    const batch=importedRows.slice(i,i+batchSize);
+    const{error}=await sb.from('trades').insert(batch);
+    if(error){failed+=batch.length;console.error(error);}
+    else imported+=batch.length;
+    btn.textContent='Importing... '+Math.round((i+batchSize)/importedRows.length*100)+'%';
+  }
+  
+  await loadTrades();
+  
+  const resultEl=document.getElementById('import-result');
+  resultEl.style.display='block';
+  resultEl.innerHTML=`<div class="ib g" style="margin-bottom:10px">
+    <strong>✓ Import complete!</strong> ${imported} trades imported successfully${failed>0?' ('+failed+' failed)':''}.
+    <span onclick="go('trades',null)" style="color:var(--ac);cursor:pointer;font-weight:600;margin-left:8px">View trades →</span>
+  </div>`;
+  
+  document.getElementById('import-preview').style.display='none';
+  toast(imported+' trades imported!','ok');
 }
 
 function renderGoals(){
@@ -1860,7 +2138,7 @@ function go(t,el){
   document.querySelectorAll('.sb-a').forEach(b=>b.classList.remove('active'));
   if(el)el.classList.add('active');
   document.getElementById('page-title').textContent=TITLES[t]||t;
-  ['overview','trades','journal','analytics','calendar','daily','weekly','ror','playbooks','tilt','apikeys','setup','support','ai'].forEach(v=>{const el=document.getElementById('tab-'+v);el.style.display=v===t?'block':'none';});
+  ['overview','trades','import','journal','analytics','calendar','daily','weekly','ror','playbooks','tilt','apikeys','setup','support','ai'].forEach(v=>{const el=document.getElementById('tab-'+v);el.style.display=v===t?'block':'none';});
   const showTop=['trades','daily','weekly','analytics'].includes(t);
   document.getElementById('goals-sec').style.display=showTop?'block':'none';
   document.getElementById('stats-grid').style.display=showTop?'grid':'none';
