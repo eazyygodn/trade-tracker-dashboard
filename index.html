@@ -1989,7 +1989,7 @@ function analyseQuery(q){
     if(!issues.length)return `Your metrics look solid — ${s.wr.toFixed(1)}% win rate, ${s.aRR.toFixed(2)} R:R, ${s.pf.toFixed(2)} profit factor. Focus on consistency and tagging setups in Playbooks to find your true edge.`;
     return `Based on your ${ca.length} closed trades, here are your key areas to improve:
 
-    const issueList=issues.map((iss,i)=>(i+1)+'. '+iss).join('\n\n');return 'Based on your '+ca.length+' closed trades, here are your key areas to improve:\n\n'+issueList+'\n\nFix these one at a time, starting with the biggest P&L impact.';
+    const issueList=issues.map((iss,i)=>(i+1)+'. '+iss).join('\n\n');return 'Based on your '+ca.length+' closed trades, here are your key areas to improve:\n\n'+issueList+'\n\nFix these one at a time.';
 
 ')}
 
