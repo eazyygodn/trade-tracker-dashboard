@@ -1119,12 +1119,12 @@ function renderImport(){
       <!-- PLATFORM CARDS -->
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:24px">
         ${[
-          {name:'TradeZella',icon:'📊',hint:'Export: Reports → Trade History → CSV'},
-          {name:'Tradervue',icon:'📈',hint:'Export: Trades → Export → CSV'},
-          {name:'Myfxbook',icon:'📉',hint:'Export: Statement → CSV'},
-          {name:'MT5 History',icon:'🖥️',hint:'MT5: Account History → right-click → Save Report'},
-          {name:'Excel / Google Sheets',icon:'📋',hint:'Save as CSV format'},
-          {name:'Any CSV',icon:'📄',hint:'Date, Symbol, Direction, Entry, Exit, P&L columns'},
+          {name:'TradeZella',icon:'📊',hint:'Trades tab → select all → Bulk Actions → Export trades to CSV → Select All columns → Download'},
+          {name:'Tradervue',icon:'📈',hint:'Trades → Export → Download CSV'},
+          {name:'Myfxbook',icon:'📉',hint:'Statement → Export → CSV format'},
+          {name:'MT5 History',icon:'🖥️',hint:'Account History tab → right-click → Save as Detailed Report (.htm or .csv)'},
+          {name:'Edgewonk',icon:'📋',hint:'Statistics → Export → CSV'},
+          {name:'Any CSV / Excel',icon:'📄',hint:'Must include: Symbol, Direction, Entry Price, P&L columns. Save as .csv'},
         ].map(p=>`<div style="background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);padding:14px;transition:.15s" onmouseover="this.style.borderColor='var(--ac-bdr)'" onmouseout="this.style.borderColor='var(--b1)'">
           <div style="font-size:22px;margin-bottom:6px">${p.icon}</div>
           <div style="font-size:13px;font-weight:700;margin-bottom:4px">${p.name}</div>
@@ -1235,26 +1235,32 @@ function splitCSVLine(line){
 function detectPlatform(header, filename){
   const fn=(filename||'').toLowerCase();
   const h=header.join(',');
-  if(fn.includes('tradezella')||h.includes('net p&l')||h.includes('net pnl'))return 'tradezella';
-  if(fn.includes('tradervue')||h.includes('buysell')||h.includes('buy/sell'))return 'tradervue';
-  if(fn.includes('myfxbook')||h.includes('pips')||h.includes('commission'))return 'myfxbook';
-  if(h.includes('deal')||h.includes('position id'))return 'mt5';
-  return 'generic';
+  if(fn.includes('tradezella')||h.includes('net p&l')||h.includes('net pnl')||h.includes('entry price')&&h.includes('exit price'))return 'TradeZella';
+  if(fn.includes('tradervue')||h.includes('buysell')||h.includes('buy/sell'))return 'Tradervue';
+  if(fn.includes('myfxbook')||h.includes('pips'))return 'Myfxbook';
+  if(fn.includes('edgewonk'))return 'Edgewonk';
+  if(h.includes('deal')||h.includes('position id')||h.includes('open time')&&h.includes('close time'))return 'MT5';
+  return 'Generic CSV';
 }
 
 function mapColumns(header, platform){
-  const find=(...keys)=>{for(const k of keys){const i=header.findIndex(h=>h.includes(k));if(i>=0)return i;}return -1;};
+  // Exact match first, then partial
+  const find=(...keys)=>{
+    for(const k of keys){const i=header.findIndex(h=>h===k);if(i>=0)return i;}
+    for(const k of keys){const i=header.findIndex(h=>h.includes(k));if(i>=0)return i;}
+    return -1;
+  };
   return {
-    symbol:   find('symbol','pair','instrument','currency'),
-    direction:find('direction','type','side','buysell','buy/sell','action'),
-    entry:    find('entry','open price','price open','entry price','open'),
-    exit:     find('exit','close price','price close','exit price','close price'),
-    profit:   find('profit','p&l','pnl','net p&l','gain','result'),
-    lots:     find('lots','volume','size','qty','quantity'),
-    openTime: find('open time','date open','open date','entry time','time'),
-    closeTime:find('close time','date close','close date','exit time'),
-    sl:       find('stop loss','sl','stoploss'),
-    tp:       find('take profit','tp','takeprofit'),
+    symbol:   find('symbol','pair','instrument'),
+    direction:find('type','direction','side','buysell','buy/sell','action'),
+    entry:    find('price','open price','entry price','entry','price open'),
+    exit:     find('close price','exit price','exit','price close'),
+    profit:   find('profit','net p&l','pnl','net pnl','gain'),
+    lots:     find('volume','lots','size','quantity','qty'),
+    openTime: find('open time','entry time','date open','open date','date','time'),
+    closeTime:find('close time','exit time','date close','close date'),
+    sl:       find('s/l','sl','stop loss','stoploss'),
+    tp:       find('t/p','tp','take profit','takeprofit'),
   };
 }
 
