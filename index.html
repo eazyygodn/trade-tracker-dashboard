@@ -1088,19 +1088,8 @@ Be specific, data-driven, and actionable. Reference their actual stats when rele
       ...window._aiHistory.slice(-8), // Keep last 8 messages for context
     ];
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1000,
-        system: systemPrompt,
-        messages: messages
-      })
-    });
-
-    const data = await response.json();
-    const reply = data.content?.[0]?.text || 'Sorry, I could not generate a response.';
+    // Use local analysis engine
+    const reply=analyseQuery(question);
 
     // Remove loading
     document.getElementById('ai-loading')?.remove();
@@ -1897,11 +1886,9 @@ function toggleAIChat(){
   aiWidgetOpen=!aiWidgetOpen;
   const w=document.getElementById('ai-widget');
   if(aiWidgetOpen){
-    // Close support if open
     supWidgetOpen=false;
     document.getElementById('sup-widget').style.display='none';
     w.style.display='flex';
-    // Build context
     const s=getStats();
     const cl=trades.filter(t=>t.status==='closed'||t.exit_price!=null);
     aiWidgetCtx=`User has ${trades.length} trades (${cl.length} closed). Win rate: ${s.wr.toFixed(1)}%. Avg R:R: ${s.aRR.toFixed(2)}. Profit factor: ${s.pf.toFixed(2)}. Total P&L: $${s.total.toFixed(2)}. Max drawdown: $${Math.abs(s.maxDD).toFixed(2)}. Symbols: ${[...new Set(trades.map(t=>t.symbol))].join(', ')}.`;
@@ -1940,36 +1927,180 @@ async function askAIWidget(preset){
   if(!q)return;
   if(input){input.value='';input.style.height='38px';}
   addWidgetMsg('user',q);
-  aiWidgetHistory.push({role:'user',content:q});
-
-  // Loading
   const c=document.getElementById('ai-msgs-widget');
   const ld=document.createElement('div');
   ld.id='aw-loading';
-  ld.innerHTML='<div style="background:var(--s2);border-radius:12px 12px 12px 3px;padding:9px 12px;font-size:12px;color:var(--t2)"><span class="spin"></span>Thinking...</div>';
+  ld.innerHTML='<div style="background:var(--s2);border-radius:12px 12px 12px 3px;padding:9px 12px;font-size:12px;color:var(--t2)"><span class="spin"></span>Analysing your data...</div>';
   c.appendChild(ld);
   c.scrollTop=c.scrollHeight;
-
-  try{
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-6',
-        max_tokens:600,
-        system:`You are an expert trading coach embedded in Trade Tracker Pro. User data: ${aiWidgetCtx} Be specific and concise — max 3 paragraphs. Reference their real stats. Not a financial advisor.`,
-        messages:aiWidgetHistory.slice(-6)
-      })
-    });
-    const data=await resp.json();
-    const reply=data.content?.[0]?.text||'Sorry, try again.';
+  setTimeout(()=>{
     document.getElementById('aw-loading')?.remove();
-    aiWidgetHistory.push({role:'assistant',content:reply});
+    const reply=analyseQuery(q);
     addWidgetMsg('assistant',reply);
-  }catch(e){
-    document.getElementById('aw-loading')?.remove();
-    addWidgetMsg('assistant','Something went wrong. Please try again.');
+    c.scrollTop=c.scrollHeight;
+  },700);
+}
+
+function analyseQuery(q){
+  const ql=q.toLowerCase();
+  const s=getStats();
+  const cl=trades.filter(t=>t.status==='closed'||t.exit_price!=null);
+  const ca=cl.map(t=>({...t,...calc(t)}));
+  const wins=ca.filter(c=>c.status==='win');
+  const losses=ca.filter(c=>c.status==='loss');
+
+  if(!ca.length)return "You don't have any closed trades yet. Once you close some trades, I can give you detailed analysis on your performance, psychology, and areas to improve.";
+
+  // Sessions
+  const sess={Asia:{p:0,w:0,t:0},London:{p:0,w:0,t:0},'New York':{p:0,w:0,t:0}};
+  ca.forEach(c=>{const h=new Date(c.open_time).getUTCHours();if(h>=0&&h<8){sess.Asia.p+=(c.pnl||0);sess.Asia.t++;if(c.status==='win')sess.Asia.w++;}if(h>=7&&h<16){sess.London.p+=(c.pnl||0);sess.London.t++;if(c.status==='win')sess.London.w++;}if(h>=13&&h<21){sess['New York'].p+=(c.pnl||0);sess['New York'].t++;if(c.status==='win')sess['New York'].w++;}});
+
+  // Revenge trading
+  let revenge=0;
+  for(let i=1;i<ca.length;i++){const gap=(new Date(ca[i].open_time)-new Date(ca[i-1].close_time||ca[i-1].open_time))/60000;if(ca[i-1].status==='loss'&&gap>=0&&gap<15)revenge++;}
+  const revengePct=ca.length>1?Math.round(revenge/(ca.length-1)*100):0;
+
+  // By symbol
+  const bySym={};
+  ca.forEach(c=>{if(!bySym[c.symbol])bySym[c.symbol]={p:0,w:0,t:0};bySym[c.symbol].p+=(c.pnl||0);bySym[c.symbol].t++;if(c.status==='win')bySym[c.symbol].w++;});
+  const bestSym=Object.entries(bySym).sort((a,b)=>b[1].p-a[1].p)[0];
+  const worstSym=Object.entries(bySym).sort((a,b)=>a[1].p-b[1].p)[0];
+
+  // Size increase after losses
+  let sizeIncrease=0;
+  for(let i=2;i<ca.length;i++){if(ca[i-1].status==='loss'&&ca[i-2].status==='loss'&&(ca[i].lots||1)>(ca[i-1].lots||1)*1.2)sizeIncrease++;}
+
+  // Hold time
+  const avgHold=cl.length?cl.reduce((s,t)=>s+(new Date(t.close_time||Date.now())-new Date(t.open_time)),0)/cl.length:0;
+  const holdStr=avgHold>3600000?(avgHold/3600000).toFixed(1)+'h':(avgHold/60000).toFixed(0)+'m';
+
+  // Best hour
+  const byHour={};
+  ca.forEach(c=>{const h=new Date(c.open_time).getUTCHours();if(!byHour[h])byHour[h]={p:0,t:0};byHour[h].p+=(c.pnl||0);byHour[h].t++;});
+  const bestHour=Object.entries(byHour).sort((a,b)=>b[1].p-a[1].p)[0];
+
+  if(ql.includes('weakness')||ql.includes('improve')||ql.includes('problem')||ql.includes('worst')){
+    const issues=[];
+    if(s.wr<45)issues.push(`Win rate of ${s.wr.toFixed(1)}% is below 45%. Focus on trade selection — only take your highest conviction setups.`);
+    if(revengePct>20)issues.push(`${revengePct}% of your trades are opened within 15 minutes of a loss — revenge trading. Implement a 30-minute cooldown rule after any loss.`);
+    if(s.aRR<1)issues.push(`Avg R:R of ${s.aRR.toFixed(2)} is below 1:1. Let winners run longer or tighten stops.`);
+    if(sizeIncrease>0)issues.push(`You've increased position size after consecutive losses ${sizeIncrease} times — a dangerous tilt pattern.`);
+    if(worstSym&&worstSym[1].p<-50)issues.push(`${worstSym[0]} is your worst symbol at $${worstSym[1].p.toFixed(2)} — consider avoiding it.`);
+    if(!issues.length)return `Your metrics look solid — ${s.wr.toFixed(1)}% win rate, ${s.aRR.toFixed(2)} R:R, ${s.pf.toFixed(2)} profit factor. Focus on consistency and tagging setups in Playbooks to find your true edge.`;
+    return `Based on your ${ca.length} closed trades, here are your key areas to improve:
+
+    const issueList=issues.map((iss,i)=>(i+1)+'. '+iss).join('\n\n');return 'Based on your '+ca.length+' closed trades, here are your key areas to improve:\n\n'+issueList+'\n\nFix these one at a time, starting with the biggest P&L impact.';
+
+')}
+
+Fix these one at a time, starting with the biggest P&L impact.`;
   }
+
+  if(ql.includes('session')||ql.includes('london')||ql.includes('new york')||ql.includes('asia')||ql.includes('time')||ql.includes('when')){
+    const sessData=Object.entries(sess).filter(([,v])=>v.t>0).sort((a,b)=>b[1].p-a[1].p);
+    if(!sessData.length)return "Not enough session data yet. Keep trading and your session breakdown will appear here.";
+    let reply=`Session breakdown (${ca.length} trades):
+
+`;
+    sessData.forEach(([name,v])=>{const wr=v.t?Math.round(v.w/v.t*100):0;reply+=`${name}: ${v.t} trades · ${wr}% WR · ${v.p>=0?'+':''}$${v.p.toFixed(2)}
+`;});
+    const best=sessData[0];reply+=`
+Best session: ${best[0]} — focus your trading here.`;
+    const worst=sessData[sessData.length-1];if(worst[1].p<0)reply+=` Reduce or avoid ${worst[0]} — it's costing you $${Math.abs(worst[1].p).toFixed(2)}.`;
+    if(bestHour)reply+=`
+
+Most profitable hour: ${bestHour[0]}:00 UTC (+$${bestHour[1].p.toFixed(2)}).`;
+    return reply;
+  }
+
+  if(ql.includes('revenge')||ql.includes('tilt')||ql.includes('emotion')||ql.includes('psychology')||ql.includes('mental')){
+    let reply=revengePct>25?`⚠️ High tilt risk. ${revengePct}% of your trades are opened within 15 minutes of a loss — revenge trading.
+
+Rule: After any loss, close your platform for 30 minutes. Non-negotiable.`:
+    revengePct>10?`Mild tilt pattern. ${revengePct}% of trades follow a loss within 15 minutes. Set a 15-minute cooldown rule after losses.`:
+    `Low tilt risk — ${revengePct}% revenge trading rate. You manage emotions well between trades.`;
+    if(sizeIncrease>0)reply+=`
+
+You increased position size after consecutive losses ${sizeIncrease} time(s). This is how traders blow accounts — size up only when winning, never when losing.`;
+    const emoTrades=ca.filter(c=>c.emotion);
+    if(emoTrades.length>3){const byEmo={};emoTrades.forEach(c=>{if(!byEmo[c.emotion])byEmo[c.emotion]={p:0,t:0};byEmo[c.emotion].p+=(c.pnl||0);byEmo[c.emotion].t++;});const sorted=Object.entries(byEmo).sort((a,b)=>b[1].p-a[1].p);if(sorted.length>1)reply+=`
+
+You trade best when "${sorted[0][0]}" (+$${sorted[0][1].p.toFixed(2)}) and worst when "${sorted[sorted.length-1][0]}" ($${sorted[sorted.length-1][1].p.toFixed(2)}).`;}
+    return reply;
+  }
+
+  if(ql.includes('win rate')||ql.includes('winrate')||ql.includes('winning')){
+    let reply=`Win rate: ${s.wr.toFixed(1)}% — ${wins.length}W / ${losses.length}L across ${ca.length} trades.
+
+`;
+    if(s.wr>=60)reply+=`Strong win rate. At ${s.aRR.toFixed(2)} R:R, your profit factor is ${s.pf.toFixed(2)}. Focus on maintaining selectivity.`;
+    else if(s.wr>=45)reply+=`${s.wr.toFixed(1)}% is workable with good R:R. Your profit factor of ${s.pf.toFixed(2)} is ${s.pf>=1?'positive — you have an edge':'below 1 — improve your R:R or entry quality'}.`;
+    else reply+=`Below 45% needs attention. Review your last 10 losing trades — is there a pattern? Wrong session, specific symbol, or setup type?`;
+    if(bestSym)reply+=`
+
+Best symbol: ${bestSym[0]} (${Math.round(bestSym[1].w/bestSym[1].t*100)}% WR, +$${bestSym[1].p.toFixed(2)}). Trade this more.`;
+    return reply;
+  }
+
+  if(ql.includes('r:r')||ql.includes('rr')||ql.includes('risk reward')||ql.includes('risk/reward')){
+    let reply=`Avg R:R: ${s.aRR.toFixed(2)} across ${ca.length} trades.
+
+`;
+    if(s.aRR>=2)reply+=`Excellent. At ${s.aRR.toFixed(2)} R:R you only need ${Math.round(1/(1+s.aRR)*100)}% win rate to break even. You're at ${s.wr.toFixed(1)}%.`;
+    else if(s.aRR>=1)reply+=`Solid R:R. Break-even win rate for you is ${Math.round(1/(1+s.aRR)*100)}%. At ${s.wr.toFixed(1)}% you're ${s.wr>1/(1+s.aRR)*100?'above — profitable':'below — improve entries or hold winners longer'}.`;
+    else reply+=`Below 1:1 R:R is the most common reason profitable traders still lose money. Fix: move SL closer to entry, or use trailing stops to let winners run further.`;
+    reply+=`
+
+Avg hold time: ${holdStr}.${avgHold<900000?' You may be cutting trades too early.':''}`;
+    return reply;
+  }
+
+  if(ql.includes('symbol')||ql.includes('pair')||ql.includes('market')){
+    const symEntries=Object.entries(bySym).sort((a,b)=>b[1].p-a[1].p);
+    let reply=`Performance by symbol (${ca.length} trades):
+
+`;
+    symEntries.forEach(([sym,v])=>{const wr=v.t?Math.round(v.w/v.t*100):0;reply+=`${sym}: ${v.t}T · ${wr}%WR · ${v.p>=0?'+':''}$${v.p.toFixed(2)}
+`;});
+    if(bestSym&&worstSym&&bestSym[0]!==worstSym[0]){reply+=`
+Focus on ${bestSym[0]}.`;if(worstSym[1].p<0)reply+=` Consider cutting ${worstSym[0]} — it's costing you $${Math.abs(worstSym[1].p).toFixed(2)}.`;}
+    return reply;
+  }
+
+  if(ql.includes('drawdown')||ql.includes('loss')||ql.includes('losing')){
+    let reply=`Max drawdown: -$${Math.abs(s.maxDD).toFixed(2)}
+
+`;
+    if(Math.abs(s.maxDD)>s.total*0.5&&s.total>0)reply+=`⚠️ Your max drawdown is over 50% of your total profit. Focus on consistency — avoid large outlier losses.`;
+    else reply+=`Drawdown is manageable. Keep position sizing consistent.`;
+    if(losses.length){const avgL=losses.reduce((s,c)=>s+(c.pnl||0),0)/losses.length;const avgW=wins.length?wins.reduce((s,c)=>s+(c.pnl||0),0)/wins.length:0;reply+=`
+
+Avg win: +$${avgW.toFixed(2)} · Avg loss: $${avgL.toFixed(2)} · Ratio: ${avgW&&avgL?Math.abs(avgW/avgL).toFixed(2):'—'}x`;}
+    return reply;
+  }
+
+  if(ql.includes('profit factor')||ql.includes('edge')||ql.includes('expectancy')){
+    const exp=(s.wr/100*s.aRR-(1-s.wr/100)).toFixed(3);
+    let reply=`Profit factor: ${s.pf>=99?'∞':s.pf.toFixed(2)} · Expectancy: ${exp}R per trade
+
+`;
+    if(parseFloat(exp)>0.3)reply+=`Strong edge. For every $100 risked you make ~$${(parseFloat(exp)*100).toFixed(0)} on average. Scale gradually.`;
+    else if(parseFloat(exp)>0)reply+=`Slim but positive edge. Small improvements to win rate or R:R will significantly boost returns.`;
+    else reply+=`Negative expectancy — losing money on average. Focus on A+ setups only for the next 30 trades to rebuild your stats.`;
+    return reply;
+  }
+
+  // Default: full summary
+  return `Performance snapshot (${ca.length} closed trades):
+
+📊 Win rate: ${s.wr.toFixed(1)}% (${wins.length}W/${losses.length}L)
+📈 Avg R:R: ${s.aRR.toFixed(2)} · Profit factor: ${s.pf>=99?'∞':s.pf.toFixed(2)}
+💰 Total P&L: ${s.total>=0?'+':''}$${s.total.toFixed(2)} · Max DD: -$${Math.abs(s.maxDD).toFixed(2)}
+${bestSym?`🏆 Best symbol: ${bestSym[0]} (+$${bestSym[1].p.toFixed(2)})`:''}${worstSym&&worstSym[1].p<0?`
+⚠️ Worst symbol: ${worstSym[0]} ($${worstSym[1].p.toFixed(2)})`:''}${revengePct>0?`
+🧠 Revenge trading: ${revengePct}%`:''}
+
+Ask me about: session analysis, psychology, win rate, R:R, symbols, drawdown, or expectancy.`;
 }
 
 async function submitWidgetTicket(){
@@ -2043,7 +2174,7 @@ if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded"
   </div>
   <div style="padding:16px">
     <div id="sup-widget-success" style="display:none;background:rgba(0,212,170,.08);border:1px solid rgba(0,212,170,.2);border-radius:8px;padding:14px;font-size:13px;color:var(--green);text-align:center;line-height:1.65">
-      ✓ Message sent!<br><span style="color:var(--t2);font-size:12px">We'll reply to ${user?.email} within 24 hours.</span>
+      ✓ Message sent!<br><span style="color:var(--t2);font-size:12px">We'll reply to your email within 24 hours.</span>
     </div>
     <div id="sup-widget-form">
       <input id="sw-subject" placeholder="Subject" style="width:100%;background:var(--bg);border:1px solid var(--b1);border-radius:8px;padding:9px 12px;color:var(--t1);font-size:13px;outline:none;font-family:var(--font);margin-bottom:8px;transition:.15s" onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--b1)'">
