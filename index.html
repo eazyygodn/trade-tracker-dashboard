@@ -1124,6 +1124,7 @@ function renderImport(){
           {name:'Myfxbook',icon:'📉',steps:['Log in to <strong>myfxbook.com</strong>','Go to your account → click <strong>Statement</strong>','Click <strong>Export</strong> → select <strong>CSV</strong> format','Download the file and drop it below']},
           {name:'Tradervue',icon:'📈',steps:['Log in to <strong>tradervue.com</strong>','Go to <strong>Trades</strong> in the top menu','Click <strong>Export</strong> (top right)','Select date range → click <strong>Download CSV</strong>','Drop the file below']},
           {name:'Edgewonk',icon:'📋',steps:['Open <strong>Edgewonk</strong> → go to <strong>Trading Journal</strong>','Click <strong>Export</strong> in the top menu','Choose <strong>CSV</strong> format → download','Drop the file below']},
+          {name:'Notion',icon:'📝',steps:['Open your Notion <strong>trading database</strong>','Click the <strong>···</strong> menu (top right of the page)','Select <strong>Export</strong>','Choose <strong>CSV</strong> as the format','Click <strong>Export</strong> — file saves to your Downloads folder','Drop the file below — we will map your columns automatically']},
           {name:'Excel / Google Sheets',icon:'📄',steps:['Make sure your spreadsheet has these columns: <strong>Date, Symbol, Direction (buy/sell), Entry Price, Exit Price, P&L</strong>','In Excel: <strong>File → Save As → CSV</strong>','In Google Sheets: <strong>File → Download → CSV</strong>','Drop the file below']},
         ].map((p,idx)=>`
           <div style="background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);margin-bottom:6px;overflow:hidden">
@@ -1409,7 +1410,7 @@ function toggleGuide(idx){
   if(!guide)return;
   const isOpen=guide.style.display!=='none';
   // Close all
-  [0,1,2,3,4,5].forEach(i=>{
+  [0,1,2,3,4,5,6].forEach(i=>{
     const g=document.getElementById('guide-'+i);
     const a=document.getElementById('guide-arrow-'+i);
     if(g)g.style.display='none';
