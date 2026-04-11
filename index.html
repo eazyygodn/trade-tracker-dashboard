@@ -519,8 +519,7 @@ input[type=range]{accent-color:var(--ac);cursor:pointer;width:100%;flex:1}
       <div class="sb-sec">Account</div>
       <div class="sb-a" onclick="go('apikeys',this)"><span class="ic">🔑</span> API Keys</div>
       <div class="sb-a" onclick="go('setup',this)"><span class="ic">⚡</span> Setup Guide</div>
-      <div class="sb-a" onclick="go('support',this)"><span class="ic">💬</span> Support</div>
-      <div class="sb-a" onclick="go('ai',this)"><span class="ic">🤖</span> AI Assistant</div>
+
     </nav>
     <div class="sb-bot">
       <div class="sb-user">
@@ -1890,7 +1889,177 @@ function exportCSV(){
   const a=document.createElement('a');a.href=url;a.download='trades_'+new Date().toISOString().slice(0,10)+'.csv';a.click();URL.revokeObjectURL(url);toast('CSV exported','ok');
 }
 function toast(msg,type='ok'){const t=document.createElement('div');t.className=`toast ${type}`;t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3000);}
+// ── WIDGET STATE ──────────────────────────────────
+let aiWidgetOpen=false, supWidgetOpen=false;
+let aiWidgetHistory=[], aiWidgetCtx='';
+
+function toggleAIChat(){
+  aiWidgetOpen=!aiWidgetOpen;
+  const w=document.getElementById('ai-widget');
+  if(aiWidgetOpen){
+    // Close support if open
+    supWidgetOpen=false;
+    document.getElementById('sup-widget').style.display='none';
+    w.style.display='flex';
+    // Build context
+    const s=getStats();
+    const cl=trades.filter(t=>t.status==='closed'||t.exit_price!=null);
+    aiWidgetCtx=`User has ${trades.length} trades (${cl.length} closed). Win rate: ${s.wr.toFixed(1)}%. Avg R:R: ${s.aRR.toFixed(2)}. Profit factor: ${s.pf.toFixed(2)}. Total P&L: $${s.total.toFixed(2)}. Max drawdown: $${Math.abs(s.maxDD).toFixed(2)}. Symbols: ${[...new Set(trades.map(t=>t.symbol))].join(', ')}.`;
+    setTimeout(()=>document.getElementById('ai-widget-input')?.focus(), 100);
+  } else {
+    w.style.display='none';
+  }
+}
+
+function toggleSupport(){
+  supWidgetOpen=!supWidgetOpen;
+  const w=document.getElementById('sup-widget');
+  if(supWidgetOpen){
+    aiWidgetOpen=false;
+    document.getElementById('ai-widget').style.display='none';
+    w.style.display='block';
+  } else {
+    w.style.display='none';
+  }
+}
+
+function addWidgetMsg(role, text){
+  const c=document.getElementById('ai-msgs-widget');
+  if(!c)return;
+  const isUser=role==='user';
+  const d=document.createElement('div');
+  d.style.cssText=`display:flex;flex-direction:column;align-items:${isUser?'flex-end':'flex-start'}`;
+  d.innerHTML=`<div style="max-width:88%;background:${isUser?'var(--ac)':'var(--s2)'};color:${isUser?'#050510':'var(--t1)'};border-radius:${isUser?'12px 12px 3px 12px':'12px 12px 12px 3px'};padding:9px 12px;font-size:12px;line-height:1.7;white-space:pre-wrap">${text}</div>`;
+  c.appendChild(d);
+  c.scrollTop=c.scrollHeight;
+}
+
+async function askAIWidget(preset){
+  const input=document.getElementById('ai-widget-input');
+  const q=preset||(input?input.value.trim():'');
+  if(!q)return;
+  if(input){input.value='';input.style.height='38px';}
+  addWidgetMsg('user',q);
+  aiWidgetHistory.push({role:'user',content:q});
+
+  // Loading
+  const c=document.getElementById('ai-msgs-widget');
+  const ld=document.createElement('div');
+  ld.id='aw-loading';
+  ld.innerHTML='<div style="background:var(--s2);border-radius:12px 12px 12px 3px;padding:9px 12px;font-size:12px;color:var(--t2)"><span class="spin"></span>Thinking...</div>';
+  c.appendChild(ld);
+  c.scrollTop=c.scrollHeight;
+
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:600,
+        system:`You are an expert trading coach embedded in Trade Tracker Pro. User data: ${aiWidgetCtx} Be specific and concise — max 3 paragraphs. Reference their real stats. Not a financial advisor.`,
+        messages:aiWidgetHistory.slice(-6)
+      })
+    });
+    const data=await resp.json();
+    const reply=data.content?.[0]?.text||'Sorry, try again.';
+    document.getElementById('aw-loading')?.remove();
+    aiWidgetHistory.push({role:'assistant',content:reply});
+    addWidgetMsg('assistant',reply);
+  }catch(e){
+    document.getElementById('aw-loading')?.remove();
+    addWidgetMsg('assistant','Something went wrong. Please try again.');
+  }
+}
+
+async function submitWidgetTicket(){
+  const subject=document.getElementById('sw-subject')?.value?.trim();
+  const message=document.getElementById('sw-msg')?.value?.trim();
+  const category=document.getElementById('sw-cat')?.value;
+  const errEl=document.getElementById('sw-err');
+  if(errEl)errEl.style.display='none';
+  if(!subject||!message||message.length<10){
+    if(errEl){errEl.textContent='Please fill in all fields.';errEl.style.display='block';}
+    return;
+  }
+  const{error}=await sb.from('support_tickets').insert({user_id:user.id,email:user.email,subject,message,category,status:'open'});
+  if(error){
+    if(errEl){errEl.textContent='Failed: '+error.message;errEl.style.display='block';}
+    return;
+  }
+  document.getElementById('sup-widget-form').style.display='none';
+  document.getElementById('sup-widget-success').style.display='block';
+}
+
 if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",init);}else{init();}
 </script>
+
+<!-- FLOATING AI + SUPPORT BUTTONS -->
+<div id="ai-bubble" onclick="toggleAIChat()" style="position:fixed;bottom:24px;right:24px;width:52px;height:52px;border-radius:50%;background:var(--ac);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:1000;box-shadow:0 4px 20px rgba(0,212,170,.4);transition:.2s;font-size:22px" title="AI Assistant" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">🤖</div>
+
+<div id="sup-bubble" onclick="toggleSupport()" style="position:fixed;bottom:86px;right:24px;width:52px;height:52px;border-radius:50%;background:var(--s2);border:1px solid var(--b2);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:1000;box-shadow:0 4px 20px rgba(0,0,0,.3);transition:.2s;font-size:22px" title="Support" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">💬</div>
+
+<!-- UNREAD BADGE -->
+<div id="sup-badge" style="position:fixed;bottom:122px;right:20px;width:18px;height:18px;border-radius:50%;background:var(--red);display:none;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;z-index:1001">!</div>
+
+<!-- AI CHAT WIDGET -->
+<div id="ai-widget" style="display:none;position:fixed;bottom:90px;right:24px;width:380px;max-width:calc(100vw - 32px);height:520px;max-height:calc(100vh - 120px);background:var(--s1);border:1px solid var(--b2);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.6);z-index:999;display:none;flex-direction:column;overflow:hidden">
+  <div style="padding:14px 16px;border-bottom:1px solid var(--b1);display:flex;align-items:center;justify-content:space-between;background:var(--s2)">
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="width:28px;height:28px;border-radius:50%;background:var(--ac);display:flex;align-items:center;justify-content:center;font-size:14px">🤖</div>
+      <div>
+        <div style="font-size:13px;font-weight:700">AI Trading Coach</div>
+        <div style="font-size:10px;color:var(--ac)">● Online · Knows your data</div>
+      </div>
+    </div>
+    <button onclick="toggleAIChat()" style="background:none;border:none;color:var(--t2);cursor:pointer;font-size:18px;padding:2px 6px">×</button>
+  </div>
+  <div id="ai-msgs-widget" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px">
+    <div style="background:var(--s2);border-radius:10px;padding:12px;font-size:12px;line-height:1.7;color:var(--t2)">
+      👋 Hi! I know your trading stats. Ask me anything about your performance, psychology, or how to improve.<br><br>
+      <span onclick="askAIWidget('What are my biggest weaknesses?')" style="color:var(--ac);cursor:pointer;display:block;margin-top:4px;font-size:11px">→ What are my biggest weaknesses?</span>
+      <span onclick="askAIWidget('Which session am I most profitable in?')" style="color:var(--ac);cursor:pointer;display:block;margin-top:3px;font-size:11px">→ Which session am I most profitable in?</span>
+      <span onclick="askAIWidget('Am I revenge trading?')" style="color:var(--ac);cursor:pointer;display:block;margin-top:3px;font-size:11px">→ Am I revenge trading?</span>
+      <span onclick="askAIWidget('How can I improve my win rate?')" style="color:var(--ac);cursor:pointer;display:block;margin-top:3px;font-size:11px">→ How can I improve my win rate?</span>
+    </div>
+  </div>
+  <div style="padding:10px;border-top:1px solid var(--b1);display:flex;gap:8px;align-items:flex-end">
+    <textarea id="ai-widget-input" placeholder="Ask about your trading..." style="flex:1;background:var(--bg);border:1px solid var(--b1);border-radius:8px;padding:8px 10px;color:var(--t1);font-size:13px;outline:none;font-family:var(--font);resize:none;height:38px;line-height:1.4;transition:.15s;overflow:hidden" onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--b1)'" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();askAIWidget()}" oninput="this.style.height='38px';this.style.height=Math.min(this.scrollHeight,90)+'px'"></textarea>
+    <button onclick="askAIWidget()" style="background:var(--ac);border:none;border-radius:8px;width:36px;height:36px;cursor:pointer;font-size:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center">↑</button>
+  </div>
+</div>
+
+<!-- SUPPORT WIDGET -->
+<div id="sup-widget" style="display:none;position:fixed;bottom:90px;right:24px;width:380px;max-width:calc(100vw - 32px);background:var(--s1);border:1px solid var(--b2);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.6);z-index:999;overflow:hidden">
+  <div style="padding:14px 16px;border-bottom:1px solid var(--b1);display:flex;align-items:center;justify-content:space-between;background:var(--s2)">
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="width:28px;height:28px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:14px">💬</div>
+      <div>
+        <div style="font-size:13px;font-weight:700">Support</div>
+        <div style="font-size:10px;color:var(--t2)">We reply within 24 hours</div>
+      </div>
+    </div>
+    <button onclick="toggleSupport()" style="background:none;border:none;color:var(--t2);cursor:pointer;font-size:18px;padding:2px 6px">×</button>
+  </div>
+  <div style="padding:16px">
+    <div id="sup-widget-success" style="display:none;background:rgba(0,212,170,.08);border:1px solid rgba(0,212,170,.2);border-radius:8px;padding:14px;font-size:13px;color:var(--green);text-align:center;line-height:1.65">
+      ✓ Message sent!<br><span style="color:var(--t2);font-size:12px">We'll reply to ${user?.email} within 24 hours.</span>
+    </div>
+    <div id="sup-widget-form">
+      <input id="sw-subject" placeholder="Subject" style="width:100%;background:var(--bg);border:1px solid var(--b1);border-radius:8px;padding:9px 12px;color:var(--t1);font-size:13px;outline:none;font-family:var(--font);margin-bottom:8px;transition:.15s" onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--b1)'">
+      <select id="sw-cat" style="width:100%;background:var(--bg);border:1px solid var(--b1);border-radius:8px;padding:9px 12px;color:var(--t1);font-size:13px;outline:none;font-family:var(--font);margin-bottom:8px">
+        <option value="setup">Setup & Installation</option>
+        <option value="sync">Trade sync issue</option>
+        <option value="feature">Feature request</option>
+        <option value="bug">Bug report</option>
+        <option value="other">Other</option>
+      </select>
+      <textarea id="sw-msg" placeholder="Describe your issue..." style="width:100%;background:var(--bg);border:1px solid var(--b1);border-radius:8px;padding:9px 12px;color:var(--t1);font-size:13px;outline:none;font-family:var(--font);resize:none;height:90px;line-height:1.6;margin-bottom:10px;transition:.15s" onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--b1)'"></textarea>
+      <button class="btn-p" onclick="submitWidgetTicket()" style="width:100%;padding:10px">Send message</button>
+      <div id="sw-err" style="color:var(--red);font-size:12px;margin-top:8px;display:none"></div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
