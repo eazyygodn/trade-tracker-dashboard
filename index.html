@@ -507,6 +507,13 @@ input[type=range]{accent-color:var(--ac);cursor:pointer;width:100%;flex:1}
       <button class="btn-p full" onclick="resetPassword()">Send reset link</button>
       <div class="auth-link"><span onclick="aTab('login')">← Back to sign in</span></div>
     </div>
+    <div id="pane-newpass" style="display:none">
+      <div style="font-size:13px;color:var(--t2);margin-bottom:18px;line-height:1.6">Choose a new password for your account.</div>
+      <div class="fg"><label>New password</label><input id="np-p" type="password" placeholder="Min 8 characters" autocomplete="new-password" onkeydown="if(event.key==='Enter')setNewPassword()"></div>
+      <div class="fg"><label>Confirm password</label><input id="np-p2" type="password" placeholder="Repeat password" autocomplete="new-password" onkeydown="if(event.key==='Enter')setNewPassword()"></div>
+      <div id="np-err" class="auth-err"></div>
+      <button class="btn-p full" onclick="setNewPassword()">Set new password</button>
+    </div>
   </div>
 </div>
 
@@ -638,13 +645,16 @@ async function init(){
   }catch(e){console.error("Supabase init error:",e);}
   sb.auth.onAuthStateChange(async(event,session)=>{
     if(event==='PASSWORD_RECOVERY'){
-      // Show password reset form
-      const newPw=prompt('Enter your new password (min 8 characters):');
-      if(newPw&&newPw.length>=8){
-        const{error}=await sb.auth.updateUser({password:newPw});
-        if(error){toast('Error: '+error.message,'err');}
-        else{toast('Password updated! Please sign in.','ok');await sb.auth.signOut();}
-      }
+      // Show proper new password form instead of ugly prompt
+      document.getElementById('app-screen').style.display='none';
+      document.getElementById('auth-screen').style.display='flex';
+      ['login','register','forgot'].forEach(p=>{
+        const el=document.getElementById('pane-'+p);
+        if(el)el.style.display='none';
+      });
+      const np=document.getElementById('pane-newpass');
+      if(np)np.style.display='block';
+      document.querySelector('.auth-logo').textContent='Set new password';
       return;
     }
     if(event==='SIGNED_IN'&&session?.user&&!user){user=session.user;await startApp();}
@@ -675,7 +685,23 @@ function aTab(t){
   document.getElementById('pane-login').style.display=t==='login'?'block':'none';
   document.getElementById('pane-register').style.display=t==='register'?'block':'none';
   const fp=document.getElementById('pane-forgot');if(fp)fp.style.display=t==='forgot'?'block':'none';
+  const np=document.getElementById('pane-newpass');if(np)np.style.display='none';
 }
+async function setNewPassword(){
+  const pw=document.getElementById('np-p')?.value;
+  const pw2=document.getElementById('np-p2')?.value;
+  const errEl=document.getElementById('np-err');
+  if(errEl)errEl.textContent='';
+  if(!pw||pw.length<8){if(errEl)errEl.textContent='Password must be at least 8 characters';return;}
+  if(pw!==pw2){if(errEl)errEl.textContent='Passwords do not match';return;}
+  const{error}=await sb.auth.updateUser({password:pw});
+  if(error){if(errEl)errEl.textContent=error.message;return;}
+  toast('Password updated! Signing you in...','ok');
+  // Session is already active after password reset, go to app
+  const{data:{session}}=await sb.auth.getSession();
+  if(session?.user){user=session.user;await startApp();}
+}
+
 async function resetPassword(){
   const email=document.getElementById('fp-e')?.value?.trim();
   const errEl=document.getElementById('fp-err');
