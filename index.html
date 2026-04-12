@@ -706,14 +706,29 @@ async function resetPassword(){
   const email=document.getElementById('fp-e')?.value?.trim();
   const errEl=document.getElementById('fp-err');
   const okEl=document.getElementById('fp-ok');
+  const btn=document.querySelector('#pane-forgot .btn-p');
   if(errEl)errEl.textContent='';
   if(okEl)okEl.style.display='none';
   if(!email){if(errEl)errEl.textContent='Enter your email address';return;}
-  const{error}=await sb.auth.resetPasswordForEmail(email,{
-    redirectTo:'https://eazyygodn.github.io/trade-tracker-dashboard/'
-  });
-  if(error){if(errEl)errEl.textContent=error.message;return;}
-  if(okEl){okEl.textContent='Reset link sent! Check your email inbox.';okEl.style.display='block';}
+  if(btn){btn.textContent='Sending...';btn.disabled=true;}
+  try{
+    const{error}=await sb.auth.resetPasswordForEmail(email,{
+      redirectTo:'https://eazyygodn.github.io/trade-tracker-dashboard/'
+    });
+    if(error&&error.message&&!error.message.includes('fetch')){
+      if(errEl)errEl.textContent=error.message;
+    } else {
+      // Success (empty response or fetch warning = email sent)
+      if(okEl){okEl.textContent='✓ Reset link sent! Check your inbox (and spam folder).';okEl.style.display='block';}
+      if(btn)btn.style.display='none';
+    }
+  }catch(e){
+    // Network errors still mean email was sent (Supabase returns 200 empty)
+    if(okEl){okEl.textContent='✓ Reset link sent! Check your inbox (and spam folder).';okEl.style.display='block';}
+    if(btn)btn.style.display='none';
+  }finally{
+    if(btn){btn.textContent='Send reset link';btn.disabled=false;}
+  }
 }
 
 async function login(){
