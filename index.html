@@ -7,7 +7,9 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
 <script>
 window.addEventListener('error', function(e){
-  document.body.innerHTML='<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:#080810;color:#e8e8f0;font-family:Segoe UI,sans-serif;text-align:center;padding:40px"><div><div style="font-size:48px;margin-bottom:16px">&#9888;</div><div style="font-size:20px;font-weight:700;margin-bottom:8px">Failed to load</div><div style="color:#6b6b8a;margin-bottom:20px">Could not connect. Check your internet connection and refresh.</div><button onclick="location.reload()" style="background:#4f8ef7;color:#fff;border:none;padding:12px 28px;border-radius:8px;font-size:14px;cursor:pointer">Refresh page</button></div></div>';
+  // Only show fatal errors, not token exchange errors from email confirmation
+  if(e.message&&(e.message.includes('token')||e.message.includes('hash')||e.message.includes('supabase')))return;
+  console.error('Page error:',e.message);
 });
 </script>
 <!-- fonts loaded in CSS -->
@@ -483,7 +485,11 @@ input[type=range]{accent-color:var(--ac);cursor:pointer;width:100%;flex:1}
       <div class="fg"><label>Password</label><input id="li-p" type="password" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()"></div>
       <div id="li-err" class="auth-err"></div>
       <button class="btn-p full" onclick="login()">Sign in</button>
-      <div class="auth-link">No account? <span onclick="aTab('register')">Sign up free</span></div>
+      <div class="auth-link" style="margin-top:10px">
+        <span onclick="aTab('forgot')" style="color:var(--t2);font-size:12px;cursor:pointer">Forgot password?</span>
+        &nbsp;·&nbsp;
+        No account? <span onclick="aTab('register')">Sign up free</span>
+      </div>
     </div>
     <div id="pane-register" style="display:none">
       <div class="fg"><label>Email</label><input id="re-e" type="email" placeholder="you@email.com" autocomplete="email"></div>
@@ -492,6 +498,14 @@ input[type=range]{accent-color:var(--ac);cursor:pointer;width:100%;flex:1}
       <div id="re-ok" class="auth-ok" style="display:none"></div>
       <button class="btn-p full" onclick="register()">Create free account</button>
       <div class="auth-link">Already have an account? <span onclick="aTab('login')">Sign in</span></div>
+    </div>
+    <div id="pane-forgot" style="display:none">
+      <div style="font-size:13px;color:var(--t2);margin-bottom:18px;line-height:1.6">Enter your email and we'll send you a link to reset your password.</div>
+      <div class="fg"><label>Email</label><input id="fp-e" type="email" placeholder="you@email.com" autocomplete="email" onkeydown="if(event.key==='Enter')resetPassword()"></div>
+      <div id="fp-err" class="auth-err"></div>
+      <div id="fp-ok" class="auth-ok" style="display:none"></div>
+      <button class="btn-p full" onclick="resetPassword()">Send reset link</button>
+      <div class="auth-link"><span onclick="aTab('login')">← Back to sign in</span></div>
     </div>
   </div>
 </div>
@@ -622,7 +636,19 @@ async function init(){
     const{data:{session}}=await sb.auth.getSession();
     if(session?.user){user=session.user;await startApp();}
   }catch(e){console.error("Supabase init error:",e);}
-  sb.auth.onAuthStateChange(async(_,session)=>{
+  sb.auth.onAuthStateChange(async(event,session)=>{
+    if(event==='PASSWORD_RECOVERY'){
+      // Show password reset form
+      const newPw=prompt('Enter your new password (min 8 characters):');
+      if(newPw&&newPw.length>=8){
+        const{error}=await sb.auth.updateUser({password:newPw});
+        if(error){toast('Error: '+error.message,'err');}
+        else{toast('Password updated! Please sign in.','ok');await sb.auth.signOut();}
+      }
+      return;
+    }
+    if(event==='SIGNED_IN'&&session?.user&&!user){user=session.user;await startApp();}
+    if(event==='SIGNED_OUT'&&user){user=null;showAuth();}
     if(session?.user&&!user){user=session.user;await startApp();}
     if(!session&&user){user=null;showAuth();}
   });
@@ -648,7 +674,22 @@ function aTab(t){
   document.querySelectorAll('.auth-tab').forEach((b,i)=>b.classList.toggle('active',(i===0&&t==='login')||(i===1&&t==='register')));
   document.getElementById('pane-login').style.display=t==='login'?'block':'none';
   document.getElementById('pane-register').style.display=t==='register'?'block':'none';
+  const fp=document.getElementById('pane-forgot');if(fp)fp.style.display=t==='forgot'?'block':'none';
 }
+async function resetPassword(){
+  const email=document.getElementById('fp-e')?.value?.trim();
+  const errEl=document.getElementById('fp-err');
+  const okEl=document.getElementById('fp-ok');
+  if(errEl)errEl.textContent='';
+  if(okEl)okEl.style.display='none';
+  if(!email){if(errEl)errEl.textContent='Enter your email address';return;}
+  const{error}=await sb.auth.resetPasswordForEmail(email,{
+    redirectTo:'https://eazyygodn.github.io/trade-tracker-dashboard/'
+  });
+  if(error){if(errEl)errEl.textContent=error.message;return;}
+  if(okEl){okEl.textContent='Reset link sent! Check your email inbox.';okEl.style.display='block';}
+}
+
 async function login(){
   const e=document.getElementById('li-e').value.trim(),p=document.getElementById('li-p').value;
   document.getElementById('li-err').textContent='';
@@ -663,7 +704,10 @@ async function register(){
   if(p.length<8){document.getElementById('re-err').textContent='Password must be at least 8 characters';return;}
   const{error}=await sb.auth.signUp({email:e,password:p});
   if(error){document.getElementById('re-err').textContent=error.message;return;}
-  document.getElementById('re-ok').textContent='Account created! Check your email to confirm, then sign in.';
+  const okEl=document.getElementById('re-ok');
+  okEl.textContent='✓ Account created! Check your email inbox and click the confirmation link.';
+  okEl.style.display='block';
+  document.getElementById('re-p').value='';
   document.getElementById('re-ok').style.display='block';
 }
 async function signout(){await sb.auth.signOut();}
