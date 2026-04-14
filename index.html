@@ -603,6 +603,7 @@ input[type=range]{accent-color:var(--ac);cursor:pointer;width:100%;flex:1}
       <div class="sb-sec">Account</div>
       <div class="sb-a" onclick="go('apikeys',this)"><span class="ic">🔑</span> API Keys</div>
       <div class="sb-a" onclick="go('setup',this)"><span class="ic">⚡</span> Setup Guide</div>
+      <div class="sb-a" onclick="go('upgrade',this)" style="margin-top:6px;background:var(--ac-dim);border:1px solid var(--ac-bdr);color:var(--ac)" id="upgrade-nav-btn">✦ Upgrade to Pro</div>
 
     </nav>
     <div class="sb-bot">
@@ -675,7 +676,8 @@ input[type=range]{accent-color:var(--ac);cursor:pointer;width:100%;flex:1}
       <div id="tab-weekly" style="display:none"></div>
       <div id="tab-ror" style="display:none"></div>
       <div id="tab-apikeys" style="display:none"></div>
-      <div id="tab-import" style="display:none"></div>
+      <div id="tab-upgrade" style="display:none"></div>
+<div id="tab-import" style="display:none"></div>
 <div id="tab-support" style="display:none"></div>
 <div id="tab-ai" style="display:none"></div>
 <div id="tab-overview" style="display:none"></div>
@@ -688,10 +690,17 @@ input[type=range]{accent-color:var(--ac);cursor:pointer;width:100%;flex:1}
 
 <script>
 const SB_URL='https://vuxsxdirrwmbqntvkywi.supabase.co';
+// LemonSqueezy - fill in your store slug and product checkout URL
+const LS_CHECKOUT_MONTHLY='https://YOUR_STORE.lemonsqueezy.com/checkout/buy/YOUR_MONTHLY_VARIANT_ID';
+const LS_CHECKOUT_ANNUAL='https://YOUR_STORE.lemonsqueezy.com/checkout/buy/YOUR_ANNUAL_VARIANT_ID';
+const FREE_TRADE_LIMIT=20;
+const NP_KEY='2WVWYKQ-0MT4ZFE-N7MKS0X-5TPH52D';
+const FREE_LIMIT=20;
+let userPlan='free',subChecked=false;
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1eHN4ZGlycndtYnFudHZreXdpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzODI4NzEsImV4cCI6MjA5MDk1ODg3MX0.tqFK0W1fNqGqOx2jxQmtlY31acCekGj8pjYJr4D-YJ0';
 const EF=SB_URL+'/functions/v1/trade-tracker';
 let sb=null;
-const TITLES={overview:'Overview',trades:'Trades',import:'Import Trades',support:'Support',ai:'AI Assistant',journal:'Journal',analytics:'Analytics',calendar:'Calendar',daily:'Daily Breakdown',weekly:'Weekly Breakdown',ror:'Risk of Ruin',playbooks:'Playbooks',tilt:'Tilt Meter',apikeys:'API Keys',setup:'Setup Guide'};
+const TITLES={overview:'Overview',trades:'Trades',upgrade:'Upgrade to Pro',import:'Import Trades',support:'Support',ai:'AI Assistant',journal:'Journal',analytics:'Analytics',calendar:'Calendar',daily:'Daily Breakdown',weekly:'Weekly Breakdown',ror:'Risk of Ruin',playbooks:'Playbooks',tilt:'Tilt Meter',apikeys:'API Keys',setup:'Setup Guide'};
 
 let user=null,trades=[],allTrades=[],apiKeys=[],sub=null,tab='trades',selId=null,activeAccount='all';
 let calY=new Date().getFullYear(),calM=new Date().getMonth(),calSel=null;
@@ -736,6 +745,8 @@ async function startApp(){
   loadGoals();
   await Promise.all([loadTrades(),loadApiKeys()]);
   subscribeRT();
+  await checkSubscription();
+  checkAndShowLimitBanner();
   checkUnreadReplies();
   const newUser=trades.length===0&&apiKeys.length===0;
   if(newUser){go('setup',document.querySelector('.sb-a:nth-last-child(1)'));return;}
@@ -920,7 +931,7 @@ function getStats(){
 
 function render(){
   renderStats();renderGoals();
-  if(tab==='overview')renderOverview();else if(tab==='import')renderImport();else if(tab==='support')renderSupport();else if(tab==='ai')renderAI();else if(tab==='trades')renderTrades();else if(tab==='journal')renderJournal();else if(tab==='analytics')renderAnalytics();
+  if(tab==='overview')renderOverview();else if(tab==='upgrade')renderUpgrade();else if(tab==='import')renderImport();else if(tab==='support')renderSupport();else if(tab==='ai')renderAI();else if(tab==='trades')renderTrades();else if(tab==='journal')renderJournal();else if(tab==='analytics')renderAnalytics();
   else if(tab==='calendar')renderCalendar();else if(tab==='daily')renderDaily();else if(tab==='weekly')renderWeekly();
   else if(tab==='ror')renderRoR();else if(tab==='playbooks')renderPlaybooks();else if(tab==='tilt')renderTilt();else if(tab==='apikeys')renderApiKeys();else if(tab==='setup')renderSetup();
 }
@@ -1571,6 +1582,166 @@ function toggleGuide(idx){
   }
 }
 
+async function loadSubscription(){
+  try{
+    const{data}=await sb.from('subscriptions').select('*').eq('user_id',user.id).single();
+    if(data){userPlan={plan:data.plan||'free',status:data.status||'active'};}
+    else{
+      // Create free subscription if doesn't exist
+      await sb.from('subscriptions').insert({user_id:user.id,plan:'free',status:'active'}).select();
+      userPlan={plan:'free',status:'active'};
+    }
+  }catch(e){
+    userPlan={plan:'free',status:'active'};
+  }
+  updatePlanUI();
+  const upgradeBtn=document.getElementById('upgrade-nav-btn');
+  if(upgradeBtn)upgradeBtn.style.display=isPro()?'none':'flex';
+}
+
+function isPro(){
+  return userPlan.plan==='pro'&&userPlan.status==='active';
+}
+
+function updatePlanUI(){
+  // Show plan badge in sidebar
+  const badge=document.getElementById('plan-badge');
+  if(badge){
+    if(isPro()){
+      badge.textContent='PRO';
+      badge.style.background='var(--ac-dim)';
+      badge.style.color='var(--ac)';
+      badge.style.border='1px solid var(--ac-bdr)';
+    }else{
+      badge.textContent='FREE';
+      badge.style.background='rgba(255,255,255,.05)';
+      badge.style.color='var(--t3)';
+      badge.style.border='1px solid var(--b1)';
+    }
+  }
+}
+
+function checkTradeLimit(){
+  if(isPro())return true;
+  if(trades.length>=FREE_TRADE_LIMIT){
+    showUpgradeModal('trade_limit');
+    return false;
+  }
+  return true;
+}
+
+function showUpgradeModal(reason){
+  const existing=document.getElementById('upgrade-modal');
+  if(existing)existing.remove();
+  const reasons={
+    trade_limit:`You've reached the <strong>${FREE_TRADE_LIMIT} trade limit</strong> on the free plan.`,
+    feature:`This feature is available on <strong>Pro plan</strong>.`,
+  };
+  const modal=document.createElement('div');
+  modal.id='upgrade-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML=`
+    <div style="background:var(--s1);border:1px solid var(--b2);border-radius:16px;padding:36px;max-width:460px;width:100%;text-align:center;position:relative">
+      <button onclick="document.getElementById('upgrade-modal').remove()" style="position:absolute;top:14px;right:16px;background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer">×</button>
+      <div style="font-size:36px;margin-bottom:14px">🚀</div>
+      <h2 style="font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px">Upgrade to Pro</h2>
+      <p style="font-size:14px;color:var(--t2);margin-bottom:24px;line-height:1.65">${reasons[reason]||reasons.feature}<br><br>Upgrade to unlock unlimited trades, all analytics, AI coach, and more.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+        <div style="background:var(--bg);border:1px solid var(--b2);border-radius:10px;padding:16px">
+          <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:8px">Monthly</div>
+          <div style="font-size:28px;font-weight:800;font-family:var(--mono);color:var(--t1)">$14.99</div>
+          <div style="font-size:11px;color:var(--t3);margin-bottom:14px">per month</div>
+          <a href="${LS_CHECKOUT_MONTHLY}?checkout[email]=${encodeURIComponent(user?.email||'')}&checkout[custom][user_id]=${user?.id||''}" target="_blank" style="display:block">
+            <button class="btn" style="width:100%;font-size:12px">Choose monthly</button>
+          </a>
+        </div>
+        <div style="background:var(--ac-dim);border:2px solid var(--ac-bdr);border-radius:10px;padding:16px;position:relative">
+          <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--ac);color:#050510;font-size:9px;font-weight:800;padding:3px 10px;border-radius:10px;letter-spacing:.5px;white-space:nowrap">BEST VALUE</div>
+          <div style="font-size:11px;color:var(--ac);text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:8px">Annual</div>
+          <div style="font-size:28px;font-weight:800;font-family:var(--mono);color:var(--ac)">$119</div>
+          <div style="font-size:11px;color:var(--t2);margin-bottom:14px">$9.92/mo · save 34%</div>
+          <a href="${LS_CHECKOUT_ANNUAL}?checkout[email]=${encodeURIComponent(user?.email||'')}&checkout[custom][user_id]=${user?.id||''}" target="_blank" style="display:block">
+            <button class="btn-p" style="width:100%;font-size:12px">Choose annual</button>
+          </a>
+        </div>
+      </div>
+      <p style="font-size:11px;color:var(--t3)">✓ Cancel anytime &nbsp;·&nbsp; ✓ Secure checkout via LemonSqueezy &nbsp;·&nbsp; ✓ All major cards + PayPal</p>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+function renderUpgrade(){
+  const el=document.getElementById('tab-upgrade');
+  const pro=isPro();
+  if(pro){
+    el.innerHTML=`<div class="es">
+      <div class="ei">🎉</div>
+      <div class="et">You're on Pro!</div>
+      <div class="ed">You have unlimited access to all features. Thank you for supporting Trade Tracker Pro.</div>
+    </div>`;
+    return;
+  }
+  el.innerHTML=`
+    <div style="max-width:700px;margin:0 auto">
+      <div style="text-align:center;margin-bottom:36px">
+        <div style="font-size:11px;color:var(--ac);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px">Upgrade</div>
+        <h1 style="font-size:36px;font-weight:800;letter-spacing:-1px;margin-bottom:12px">Unlock everything</h1>
+        <p style="font-size:15px;color:var(--t2);line-height:1.65">You're on the free plan — limited to ${FREE_TRADE_LIMIT} trades lifetime. Upgrade to Pro for unlimited trades, all analytics, AI coach, and more.</p>
+      </div>
+
+      <!-- PLANS -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:28px">
+        <!-- Monthly -->
+        <div style="background:var(--s1);border:1px solid var(--b2);border-radius:14px;padding:28px">
+          <div style="font-size:13px;font-weight:700;color:var(--t2);margin-bottom:16px">Monthly</div>
+          <div style="font-size:42px;font-weight:800;font-family:var(--mono);letter-spacing:-2px;margin-bottom:4px">$14.99</div>
+          <div style="font-size:12px;color:var(--t3);margin-bottom:24px">per month · cancel anytime</div>
+          <a href="${LS_CHECKOUT_MONTHLY}?checkout[email]=${encodeURIComponent(user?.email||'')}&checkout[custom][user_id]=${user?.id||''}" target="_blank">
+            <button class="btn" style="width:100%;padding:11px;font-size:14px">Get started →</button>
+          </a>
+        </div>
+        <!-- Annual -->
+        <div style="background:var(--ac-dim);border:2px solid var(--ac-bdr);border-radius:14px;padding:28px;position:relative">
+          <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--ac);color:#050510;font-size:10px;font-weight:800;padding:4px 14px;border-radius:10px;letter-spacing:.5px;white-space:nowrap">BEST VALUE — SAVE 34%</div>
+          <div style="font-size:13px;font-weight:700;color:var(--ac);margin-bottom:16px">Annual</div>
+          <div style="font-size:42px;font-weight:800;font-family:var(--mono);letter-spacing:-2px;color:var(--ac);margin-bottom:4px">$119</div>
+          <div style="font-size:12px;color:var(--t2);margin-bottom:24px">$9.92/mo · 2 months free</div>
+          <a href="${LS_CHECKOUT_ANNUAL}?checkout[email]=${encodeURIComponent(user?.email||'')}&checkout[custom][user_id]=${user?.id||''}" target="_blank">
+            <button class="btn-p" style="width:100%;padding:11px;font-size:14px">Get started →</button>
+          </a>
+        </div>
+      </div>
+
+      <!-- FEATURES -->
+      <div style="background:var(--s1);border:1px solid var(--b1);border-radius:14px;overflow:hidden;margin-bottom:20px">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--b1)">
+          <div style="font-size:12px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.8px">What's included in Pro</div>
+        </div>
+        ${[
+          ['⚡','Unlimited trades','No limits — sync as many as you want'],
+          ['📈','Full analytics suite','Session, hourly, drawdown, equity curve'],
+          ['🧠','AI Trading Coach','Rule-based analysis of your real data'],
+          ['📋','Playbooks','Track every setup strategy'],
+          ['🎯','Risk of Ruin simulator','Know your edge before scaling'],
+          ['📷','Screenshot uploads','Chart images on every trade'],
+          ['💼','Multiple accounts','Manage prop firm + personal accounts'],
+          ['📥','CSV import','Switch from TradeZella, Notion, MT5, Myfxbook'],
+          ['💬','Priority support','Faster replies from our team'],
+        ].map(([icon,title,desc])=>`
+          <div style="display:flex;align-items:center;gap:14px;padding:12px 20px;border-bottom:1px solid var(--b0)">
+            <span style="font-size:18px;width:26px;text-align:center">${icon}</span>
+            <div><div style="font-size:13px;font-weight:600">${title}</div><div style="font-size:11px;color:var(--t2);margin-top:1px">${desc}</div></div>
+            <span style="margin-left:auto;color:var(--green);font-weight:700">✓</span>
+          </div>`).join('')}
+      </div>
+
+      <p style="text-align:center;font-size:12px;color:var(--t3);line-height:1.8">
+        ✓ Secure checkout via LemonSqueezy &nbsp;·&nbsp; ✓ All major cards, PayPal, Apple Pay &nbsp;·&nbsp; ✓ Cancel anytime<br>
+        After payment your account upgrades instantly — no manual steps needed.
+      </p>
+    </div>`;
+}
+
 function renderGoals(){
   const s=getStats(),now=new Date(),ym=now.toISOString().slice(0,7),td=now.toISOString().slice(0,10);
   const mp=s.calcs.filter(c=>(c.open_time||'').slice(0,7)===ym).reduce((x,c)=>x+(c.pnl||0),0);
@@ -1641,6 +1812,14 @@ function renderStats(){
 
 function renderTrades(){
   const el=document.getElementById('tab-trades');
+  // Show free limit warning
+  if(!isPro()&&trades.length>=FREE_TRADE_LIMIT){
+    const banner=`<div style="background:var(--amber-bg);border:1px solid rgba(255,170,0,.25);border-radius:var(--r2);padding:12px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <div style="font-size:13px;color:var(--amber)">⚠️ You've reached the <strong>${FREE_TRADE_LIMIT} trade limit</strong> on the free plan. New trades won't sync.</div>
+      <button class="btn-p" onclick="go('upgrade',null)" style="font-size:11px;padding:6px 14px">Upgrade to Pro →</button>
+    </div>`;
+    el.innerHTML=banner;
+  } else { el.innerHTML=''; }
   if(!trades.length){el.innerHTML=`<div class="es"><div class="ei">📊</div><div class="et">No trades yet</div><div class="ed">Connect your MT4/MT5 EA to auto-log trades, or add one manually.</div><div class="eb"><button class="btn-p" onclick="go('setup',null)">⚡ Setup guide</button><button class="btn" onclick="toggleForm()">+ Log manually</button></div></div>`;return;}
   el.innerHTML=`<div class="tw"><table><thead><tr><th>Date</th><th>Symbol</th><th>Dir</th><th>Entry</th><th>Exit</th><th>R:R</th><th>Risk%</th><th>P&L</th><th>Grade</th><th>Mood</th><th>Result</th><th></th></tr></thead><tbody>${[...trades].map(t=>{const{rr,pnl,status,rp}=calc(t);const pc=pnl==null?'':pnl>=0?'color:var(--green)':'color:var(--red)';const rpc=rp>2?'color:var(--red)':rp>1?'color:var(--amber)':'';return`<tr class="tr${selId===t.id?' sel':''}" onclick="selectTrade('${t.id}')"><td>${(t.open_time||'').slice(0,10)}</td><td style="font-weight:600">${t.symbol||''}<span style="font-size:9px;color:var(--t3);display:block;margin-top:1px">${t.account_label||''}</span></td><td class="${t.direction}">${t.direction}</td><td>${fmt(+t.entry_price)}</td><td>${t.exit_price!=null?fmt(+t.exit_price):'—'}</td><td><div style="display:flex;align-items:center;gap:4px"><span>${rr.toFixed(2)}</span><div style="height:3px;width:${Math.min(rr*11,40).toFixed(0)}px;background:var(--green);border-radius:2px"></div></div></td><td style="${rpc}">${rp>0?rp.toFixed(1)+'%':'—'}</td><td style="${pc}">${pnl!=null?(pnl>=0?'+':'')+'$'+Math.abs(pnl).toFixed(2):'—'}</td><td>${gb(t.grade)}</td><td>${eb(t.emotion)}</td><td>${sb2(status)}</td><td><button class="btn-x" onclick="event.stopPropagation();delTrade('${t.id}')">×</button></td></tr>`;}).join('')}</tbody></table></div>`;
 }
@@ -2326,7 +2505,7 @@ function go(t,el){
   document.querySelectorAll('.sb-a').forEach(b=>b.classList.remove('active'));
   if(el)el.classList.add('active');
   document.getElementById('page-title').textContent=TITLES[t]||t;
-  ['overview','trades','import','journal','analytics','calendar','daily','weekly','ror','playbooks','tilt','apikeys','setup','support','ai'].forEach(v=>{const el=document.getElementById('tab-'+v);el.style.display=v===t?'block':'none';});
+  ['overview','trades','upgrade','import','journal','analytics','calendar','daily','weekly','ror','playbooks','tilt','apikeys','setup','support','ai'].forEach(v=>{const el=document.getElementById('tab-'+v);el.style.display=v===t?'block':'none';});
   const showTop=['trades','daily','weekly','analytics'].includes(t);
   document.getElementById('goals-sec').style.display=showTop?'block':'none';
   document.getElementById('stats-grid').style.display=showTop?'grid':'none';
@@ -2612,6 +2791,151 @@ async function checkUnreadReplies(){
   }
 }
 
+// ── PAYWALL ───────────────────────────────────────────────
+async function checkSubscription(){
+  if(!user||subChecked)return;
+  subChecked=true;
+  const{data}=await sb.from('subscriptions').select('plan,status,current_period_end').eq('user_id',user.id).single();
+  if(data){
+    userPlan=data.plan==='pro'&&data.status==='active'?'pro':'free';
+  } else {
+    // Create free subscription if not exists
+    await sb.from('subscriptions').insert({user_id:user.id,plan:'free',status:'active'}).onConflict('user_id').ignore();
+    userPlan='free';
+  }
+}
+
+function checkTradeLimit(){
+  if(userPlan==='pro')return true;
+  const closed=trades.filter(t=>t.status==='closed'||t.exit_price!=null).length;
+  if(closed>=FREE_LIMIT){showUpgrade();return false;}
+  return true;
+}
+
+function showUpgrade(){
+  document.getElementById('upgrade-modal').style.display='flex';
+  showPricing();
+}
+
+function closeUpgrade(){
+  document.getElementById('upgrade-modal').style.display='none';
+  clearInterval(window._payTimer);
+  clearInterval(window._payPoller);
+}
+
+function showPricing(){
+  document.getElementById('upg-pricing').style.display='block';
+  document.getElementById('upg-payment').style.display='none';
+  document.getElementById('upg-success').style.display='none';
+  document.getElementById('coin-select').style.display='none';
+}
+
+async function startPayment(){
+  // Show coin selector
+  document.getElementById('upg-pricing').style.display='none';
+  document.getElementById('coin-select').style.display='block';
+}
+
+async function createInvoice(currency){
+  document.getElementById('coin-select').style.display='none';
+  document.getElementById('upg-payment').style.display='block';
+  document.getElementById('pay-status').innerHTML='<span class="spin"></span> Creating payment...';
+  document.getElementById('pay-address').textContent='';
+  document.getElementById('pay-amount').textContent='';
+
+  try{
+    const res=await fetch('https://api.nowpayments.io/v1/payment',{
+      method:'POST',
+      headers:{'x-api-key':NP_KEY,'Content-Type':'application/json'},
+      body:JSON.stringify({
+        price_amount:14.99,
+        price_currency:'usd',
+        pay_currency:currency,
+        order_id:'ttp_'+user.id+'_'+Date.now(),
+        order_description:'Trade Tracker Pro - Monthly',
+      })
+    });
+    const data=await res.json();
+    if(data.payment_address){
+      window._currentPaymentId=data.payment_id;
+      document.getElementById('pay-address').textContent=data.payment_address;
+      document.getElementById('pay-amount').textContent=parseFloat(data.pay_amount).toFixed(6);
+      document.getElementById('pay-currency').textContent=currency.toUpperCase()+' · '+data.network;
+      document.getElementById('pay-status').innerHTML='<span class="spin"></span> Waiting for payment...';
+      startPaymentTimer(20*60);
+      startPaymentPoller(data.payment_id);
+    } else {
+      document.getElementById('pay-status').innerHTML='<span style="color:var(--red)">❌ Error: '+(data.message||'Failed to create payment')+'</span>';
+    }
+  }catch(e){
+    document.getElementById('pay-status').innerHTML='<span style="color:var(--red)">❌ Network error. Please try again.</span>';
+  }
+}
+
+function copyAddress(){
+  const addr=document.getElementById('pay-address').textContent;
+  navigator.clipboard.writeText(addr).then(()=>toast('Address copied!','ok'));
+}
+
+function startPaymentTimer(seconds){
+  clearInterval(window._payTimer);
+  let s=seconds;
+  window._payTimer=setInterval(()=>{
+    s--;
+    const m=Math.floor(s/60),sec=s%60;
+    const el=document.getElementById('pay-timer');
+    if(el)el.textContent=m+':'+(sec<10?'0':'')+sec;
+    if(s<=0){clearInterval(window._payTimer);if(el)el.textContent='Expired';}
+  },1000);
+}
+
+function startPaymentPoller(paymentId){
+  clearInterval(window._payPoller);
+  window._payPoller=setInterval(async()=>{
+    try{
+      const res=await fetch('https://api.nowpayments.io/v1/payment/'+paymentId,{
+        headers:{'x-api-key':NP_KEY}
+      });
+      const data=await res.json();
+      const status=data.payment_status;
+      const statusEl=document.getElementById('pay-status');
+      if(status==='finished'||status==='confirmed'||status==='partially_paid'){
+        clearInterval(window._payPoller);
+        clearInterval(window._payTimer);
+        // Activate Pro in Supabase
+        await sb.from('subscriptions').upsert({
+          user_id:user.id,plan:'pro',status:'active',
+          stripe_subscription_id:'nowpayments_'+paymentId,
+          current_period_end:new Date(Date.now()+30*24*60*60*1000).toISOString(),
+          updated_at:new Date().toISOString()
+        },{onConflict:'user_id'});
+        userPlan='pro';
+        document.getElementById('upg-payment').style.display='none';
+        document.getElementById('upg-success').style.display='block';
+        toast('🎉 Payment confirmed! Welcome to Pro!','ok');
+      } else if(status==='sending'||status==='confirming'){
+        if(statusEl)statusEl.innerHTML='<span style="color:var(--blue)">⏳ Confirming on blockchain...</span>';
+      } else if(status==='failed'||status==='expired'){
+        clearInterval(window._payPoller);
+        if(statusEl)statusEl.innerHTML='<span style="color:var(--red)">❌ Payment '+status+'. Please try again.</span>';
+      }
+    }catch(e){console.log('Poll error:',e);}
+  },10000); // Check every 10 seconds
+}
+
+// Show upgrade banner on trades page if near limit
+function checkAndShowLimitBanner(){
+  if(userPlan==='pro')return;
+  const closed=trades.filter(t=>t.status==='closed'||t.exit_price!=null).length;
+  const el=document.getElementById('limit-banner');
+  if(!el)return;
+  if(closed>=FREE_LIMIT){
+    el.innerHTML=`<div style="background:rgba(255,68,102,.08);border:1px solid rgba(255,68,102,.2);border-radius:var(--r2);padding:12px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px"><div style="font-size:13px;color:var(--red)"><strong>Free limit reached</strong> — you've used ${closed}/${FREE_LIMIT} trades</div><button class="btn-p" onclick="showUpgrade()" style="padding:6px 16px;font-size:12px">Upgrade to Pro →</button></div>`;
+  } else if(closed>=FREE_LIMIT-5){
+    el.innerHTML=`<div style="background:var(--amber-bg);border:1px solid rgba(255,170,0,.2);border-radius:var(--r2);padding:12px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px"><div style="font-size:13px;color:var(--amber)"><strong>${FREE_LIMIT-closed} free trades remaining</strong> — upgrade before you hit the limit</div><button onclick="showUpgrade()" style="background:none;border:1px solid var(--amber);border-radius:var(--r);padding:5px 12px;color:var(--amber);font-size:11px;cursor:pointer">Upgrade</button></div>`;
+  }
+}
+
 if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",init);}else{init();}
 </script>
 
@@ -2678,6 +3002,107 @@ if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded"
       <textarea id="sw-msg" placeholder="Describe your issue..." style="width:100%;background:var(--bg);border:1px solid var(--b1);border-radius:8px;padding:9px 12px;color:var(--t1);font-size:13px;outline:none;font-family:var(--font);resize:none;height:90px;line-height:1.6;margin-bottom:10px;transition:.15s" onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--b1)'"></textarea>
       <button class="btn-p" onclick="submitWidgetTicket()" style="width:100%;padding:10px">Send message</button>
       <div id="sw-err" style="color:var(--red);font-size:12px;margin-top:8px;display:none"></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- UPGRADE MODAL -->
+<div id="upgrade-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:2000;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closeUpgrade()">
+  <div style="background:var(--s1);border:1px solid var(--b2);border-radius:16px;max-width:480px;width:100%;max-height:90vh;overflow-y:auto;position:relative">
+    <!-- Top accent -->
+    <div style="height:3px;background:linear-gradient(90deg,var(--ac),var(--blue));border-radius:16px 16px 0 0"></div>
+    <button onclick="closeUpgrade()" style="position:absolute;top:14px;right:16px;background:none;border:none;color:var(--t2);font-size:20px;cursor:pointer;z-index:1">×</button>
+
+    <div id="upgrade-content" style="padding:32px">
+      <!-- DEFAULT: Pricing view -->
+      <div id="upg-pricing">
+        <div style="text-align:center;margin-bottom:24px">
+          <div style="font-size:36px;margin-bottom:10px">🚀</div>
+          <div style="font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:8px">Upgrade to Pro</div>
+          <div style="font-size:14px;color:var(--t2);line-height:1.65">You've used your 20 free trades.<br>Upgrade to track unlimited trades.</div>
+        </div>
+
+        <!-- Price card -->
+        <div style="background:var(--s2);border:1px solid var(--ac-bdr);border-radius:12px;padding:22px;margin-bottom:20px;text-align:center">
+          <div style="font-size:13px;color:var(--ac);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Pro Plan</div>
+          <div style="font-size:42px;font-weight:800;font-family:var(--mono);letter-spacing:-2px;color:var(--t1)">$14.99<span style="font-size:16px;color:var(--t2);font-weight:400">/mo</span></div>
+          <div style="font-size:12px;color:var(--t3);margin-top:4px">~15 USDT · paid in crypto</div>
+        </div>
+
+        <!-- Features -->
+        <div style="margin-bottom:22px">
+          ${['Unlimited trades','All analytics reports','AI trading coach','Playbooks & strategies','Session analysis','MT4/MT5 auto-sync','Priority support'].map(f=>`
+            <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--b0)">
+              <span style="color:var(--green);font-size:14px">✓</span>
+              <span style="font-size:13px;color:var(--t1)">${f}</span>
+            </div>`).join('')}
+        </div>
+
+        <button class="btn-p" onclick="startPayment()" style="width:100%;padding:14px;font-size:15px">Pay with Crypto →</button>
+        <div style="text-align:center;font-size:11px;color:var(--t3);margin-top:10px">USDT, BTC, ETH, and 350+ coins · Instant activation</div>
+      </div>
+
+      <!-- PAYMENT VIEW -->
+      <div id="upg-payment" style="display:none">
+        <div style="text-align:center;margin-bottom:20px">
+          <div style="font-size:13px;color:var(--t2);margin-bottom:4px">Send exactly</div>
+          <div id="pay-amount" style="font-size:32px;font-weight:800;font-family:var(--mono);color:var(--ac)"></div>
+          <div id="pay-currency" style="font-size:13px;color:var(--t2);margin-bottom:14px"></div>
+        </div>
+
+        <!-- Address box -->
+        <div style="margin-bottom:16px">
+          <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:6px">Payment address</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div id="pay-address" style="flex:1;background:var(--bg);border:1px solid var(--b2);border-radius:8px;padding:10px 12px;font-family:var(--mono);font-size:11px;word-break:break-all;color:var(--t1);line-height:1.5"></div>
+            <button onclick="copyAddress()" style="background:var(--s2);border:1px solid var(--b2);border-radius:8px;padding:10px;cursor:pointer;color:var(--t1);flex-shrink:0;font-size:14px" title="Copy">📋</button>
+          </div>
+        </div>
+
+        <!-- Status -->
+        <div id="pay-status" style="background:var(--amber-bg);border:1px solid rgba(255,170,0,.2);border-radius:8px;padding:12px 14px;font-size:13px;color:var(--amber);text-align:center;margin-bottom:14px">
+          <span class="spin"></span> Waiting for payment...
+        </div>
+
+        <!-- Timer -->
+        <div style="text-align:center;font-size:12px;color:var(--t3);margin-bottom:16px">
+          Time remaining: <span id="pay-timer" style="font-family:var(--mono);color:var(--t2)">20:00</span>
+        </div>
+
+        <div style="font-size:11px;color:var(--t3);text-align:center;line-height:1.7">
+          Send the exact amount shown above. Your account upgrades automatically once payment confirms.
+        </div>
+
+        <button onclick="showPricing()" style="width:100%;margin-top:14px;background:none;border:1px solid var(--b1);border-radius:8px;padding:9px;color:var(--t2);font-size:12px;cursor:pointer">← Choose different coin</button>
+      </div>
+
+      <!-- SUCCESS VIEW -->
+      <div id="upg-success" style="display:none;text-align:center;padding:20px 0">
+        <div style="font-size:56px;margin-bottom:16px">🎉</div>
+        <div style="font-size:22px;font-weight:800;margin-bottom:8px">You're Pro!</div>
+        <div style="font-size:14px;color:var(--t2);margin-bottom:24px;line-height:1.65">Payment confirmed. All Pro features are now unlocked.</div>
+        <button class="btn-p" onclick="closeUpgrade();location.reload()" style="padding:12px 32px">Start trading →</button>
+      </div>
+    </div>
+
+    <!-- Coin selector -->
+    <div id="coin-select" style="display:none;padding:0 32px 32px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--t2)">Choose payment coin:</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+        ${[
+          {id:'usdttrc20',name:'USDT',net:'TRC20',icon:'💵'},
+          {id:'usdterc20',name:'USDT',net:'ERC20',icon:'💵'},
+          {id:'btc',name:'BTC',net:'Bitcoin',icon:'₿'},
+          {id:'eth',name:'ETH',net:'Ethereum',icon:'Ξ'},
+          {id:'ltc',name:'LTC',net:'Litecoin',icon:'Ł'},
+          {id:'trx',name:'TRX',net:'TRON',icon:'⚡'},
+        ].map(c=>`<div onclick="createInvoice('${c.id}')" style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:12px;text-align:center;cursor:pointer;transition:.15s" onmouseover="this.style.borderColor='var(--ac-bdr)'" onmouseout="this.style.borderColor='var(--b1)'">
+          <div style="font-size:20px;margin-bottom:4px">${c.icon}</div>
+          <div style="font-size:12px;font-weight:700">${c.name}</div>
+          <div style="font-size:9px;color:var(--t3)">${c.net}</div>
+        </div>`).join('')}
+      </div>
     </div>
   </div>
 </div>
