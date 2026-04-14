@@ -2869,6 +2869,16 @@ function selectPlan(plan){
     if(priceNote)priceNote.textContent='~120 USDT · save $60/year vs monthly';
   }
 }
+function startPaymentChecked(){
+  const cb = document.getElementById('terms-agree');
+  if(!cb || !cb.checked){
+    cb.closest('div').style.border='1px solid var(--red)';
+    setTimeout(()=>{if(cb)cb.closest('div').style.border='1px solid var(--b1)';},2000);
+    toast('Please agree to the Terms of Service first','err');
+    return;
+  }
+  startPayment();
+}
 
 async function startPayment(){
   // Show coin selector
@@ -3086,11 +3096,11 @@ if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded"
         <!-- Features -->
         <div style="margin-bottom:18px">
           ${[
-            ['Unlimited trades','No limits ever'],
-            ['All analytics reports','Sessions, equity curve, drawdown & more'],
-            ['AI trading coach','Analyses your actual stats'],
-            ['Playbooks & strategies','Track performance per setup'],
-            ['MT4/MT5 auto-sync','Trades appear in seconds'],
+            ['Unlimited trades','No 20-trade cap ever'],
+            ['Deep analytics','Sessions, equity, drawdown, hourly P&L'],
+            ['AI trading coach','Spots patterns in your real data'],
+            ['Playbooks & strategies','Win rate & P&L per setup'],
+            ['MT4/MT5 auto-sync','Every trade synced in seconds'],
             ['Priority support','We reply within 24 hours'],
           ].map(([f,d])=>`
             <div style="display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid var(--b0)">
@@ -3099,7 +3109,14 @@ if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded"
             </div>`).join('')}
         </div>
 
-        <button class="btn-p" onclick="startPayment()" style="width:100%;padding:13px;font-size:15px">Pay with Crypto →</button>
+        <!-- Terms agreement -->
+        <div style="background:var(--bg);border:1px solid var(--b1);border-radius:8px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:flex-start;gap:10px">
+          <input type="checkbox" id="terms-agree" style="margin-top:2px;accent-color:var(--ac);width:15px;height:15px;flex-shrink:0;cursor:pointer">
+          <label for="terms-agree" style="font-size:12px;color:var(--t2);line-height:1.6;cursor:pointer">
+            I agree to the <a href="https://tradetrackerpro.co/terms.html" target="_blank" style="color:var(--ac)">Terms of Service</a>.
+          </label>
+        </div>
+        <button class="btn-p" onclick="startPaymentChecked()" style="width:100%;padding:13px;font-size:15px">Pay with Crypto →</button>
         <div style="text-align:center;font-size:11px;color:var(--t3);margin-top:8px">USDT, BTC, ETH, and 350+ coins · Instant activation · No recurring charge</div>
       </div>
 
