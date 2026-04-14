@@ -2,6 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="description" content="Trade Tracker Pro — Automated MT4/MT5 trade journal. Free forever. Sync trades automatically, deep analytics, AI coach, and more.">
+<meta property="og:title" content="Trade Tracker Pro — Automated MT4/MT5 Journal">
+<meta property="og:description" content="Connect your MT4/MT5 in 5 minutes. Every trade syncs automatically. Free forever.">
+<meta name="theme-color" content="#09090f">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Trade Tracker Pro</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
@@ -644,7 +648,7 @@ input[type=range]{accent-color:var(--ac);cursor:pointer;width:100%;flex:1}
         <div id="gbars"></div>
         <div class="gm" id="gmeta"></div>
       </div>
-      <div class="stats" id="stats-grid"></div>
+      <div id="limit-banner"></div><div class="stats" id="stats-grid"></div>
       <div id="trade-form" style="display:none">
         <div class="fc2">
           <div class="fs">log trade manually</div>
@@ -1831,6 +1835,7 @@ function selectTrade(id){
   const{rr,pnl,status,rp}=calc(t),pc=pnl!=null?`color:${pnl>=0?'var(--green)':'var(--red)'}`:'';
   dp.style.display='block';
   dp.innerHTML=`<div class="dp"><div class="dph"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-family:var(--font);font-size:17px;font-weight:700">${t.symbol}</span><span class="${t.direction}">${t.direction}</span>${gb(t.grade)}${eb(t.emotion)}${sb2(status)}</div><button class="btn-x" style="font-size:20px" onclick="selectTrade('${id}')">×</button></div><div class="dpg"><div class="dpb"><div class="dl">Market</div><div class="dv">${t.market||'—'}</div></div><div class="dpb"><div class="dl">Date</div><div class="dv">${(t.open_time||'').slice(0,10)}</div></div><div class="dpb"><div class="dl">Entry</div><div class="dv">${fmt(+t.entry_price)}</div></div><div class="dpb"><div class="dl">Stop Loss</div><div class="dv">${t.stop_loss?fmt(+t.stop_loss):'—'}</div></div><div class="dpb"><div class="dl">Take Profit</div><div class="dv">${t.take_profit?fmt(+t.take_profit):'—'}</div></div><div class="dpb"><div class="dl">Exit</div><div class="dv">${t.exit_price!=null?fmt(+t.exit_price):'still open'}</div></div><div class="dpb"><div class="dl">Lots</div><div class="dv">${t.lots||1}</div></div><div class="dpb"><div class="dl">Hold time</div><div class="dv">${(()=>{if(!t.close_time)return "open";const ms=new Date(t.close_time)-new Date(t.open_time);const m=Math.floor(ms/60000);return m<60?m+"m":Math.floor(m/60)+"h "+( m%60)+"m";})()}</div></div><div class="dpb"><div class="dl">R:R</div><div class="dv">${rr.toFixed(2)}</div></div><div class="dpb"><div class="dl">Risk %</div><div class="dv" style="${rp>2?'color:var(--red)':rp>1?'color:var(--amber)':''}">${rp>0?rp.toFixed(2)+'%':'—'}</div></div><div class="dpb"><div class="dl">P&L</div><div class="dv" style="${pc}">${pnl!=null?(pnl>=0?'+':'')+'$'+pnl.toFixed(2):'open'}</div></div></div>${t.screenshot_url?`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span class="dl">Screenshot</span><button class="btn-d" style="font-size:11px;padding:2px 8px" onclick="removeScreenshot('${id}')">🗑 Remove</button></div><div style="margin-bottom:12px"><img src="${t.screenshot_url}" style="width:100%;border-radius:8px;border:1px solid var(--b1);cursor:pointer" onclick="window.open('${t.screenshot_url}','_blank')"></div>`:''}${t.notes?`<div class="dl" style="margin-bottom:6px">Notes</div><div class="nb">${t.notes}</div>`:''}<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" style="font-size:12px" onclick="document.getElementById('ea-${id}').style.display=document.getElementById('ea-${id}').style.display==='none'?'block':'none'">✏️ Edit notes & grade</button>${t.screenshot_url?'':`<button class="btn" style="font-size:12px" onclick="triggerScreenshot('${id}')">📷 Add screenshot</button>`}</div><input type="file" id="sc-${id}" style="display:none" accept="image/*" onchange="uploadScreenshot('${id}',this)"><div class="ea" id="ea-${id}"><textarea id="ea-notes" placeholder="Add notes...">${t.notes||''}</textarea><div style="margin-bottom:8px"><input id="ea-setup" style="width:100%;background:var(--bg);border:1px solid var(--b2);border-radius:var(--r);padding:8px 10px;color:var(--t1);font-size:13px;outline:none;font-family:var(--font)" placeholder="Setup / Playbook (e.g. Break & Retest)" value="${t.setup||''}"></div><div class="ea-row"><select id="ea-grade"><option value="">— Grade</option>${['A','B','C','D'].map(g=>`<option value="${g}"${t.grade===g?' selected':''}>${g}</option>`).join('')}</select><select id="ea-emo"><option value="">— Emotion</option>${['calm','confident','anxious','fomo','revenge','bored'].map(e=>`<option value="${e}"${t.emotion===e?' selected':''}>${e}</option>`).join('')}</select><button class="btn-p" style="font-size:12px;padding:6px 13px" onclick="saveNotes('${id}')">Save</button><button class="btn" style="font-size:12px" onclick="document.getElementById('ea-${id}').style.display='none'">Cancel</button></div></div></div>`;
+  checkAndShowLimitBanner();
 }
 function renderJournal(){
   const el=document.getElementById('tab-journal');
@@ -2514,7 +2519,7 @@ function go(t,el){
 }
 function toggleSB(){const sb=document.getElementById('sidebar');const ov=document.getElementById('overlay');sb.classList.toggle('open');ov.style.display=sb.classList.contains('open')?'block':'none';}
 function closeSB(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').style.display='none';}
-function toggleForm(){updateAccDatalist();const open=document.getElementById('trade-form').style.display==='none';document.getElementById('trade-form').style.display=open?'block':'none';document.getElementById('btn-add').textContent=open?'× Cancel':'+ Trade';if(open)document.getElementById('f-date').value=new Date().toISOString().split('T')[0];}
+function toggleForm(){if(!checkTradeLimit())return;updateAccDatalist();const open=document.getElementById('trade-form').style.display==='none';document.getElementById('trade-form').style.display=open?'block':'none';document.getElementById('btn-add').textContent=open?'× Cancel':'+ Trade';if(open)document.getElementById('f-date').value=new Date().toISOString().split('T')[0];}
 function clearForm(){['f-sym','f-en','f-sl','f-tp','f-ex','f-lo','f-pr','f-no','f-pb','f-acc'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('f-gr').value='';document.getElementById('f-em').value='';}
 function exportCSV(){
   if(!trades.length){toast('No trades to export','err');return;}
@@ -2795,13 +2800,27 @@ async function checkUnreadReplies(){
 async function checkSubscription(){
   if(!user||subChecked)return;
   subChecked=true;
-  const{data}=await sb.from('subscriptions').select('plan,status,current_period_end').eq('user_id',user.id).single();
-  if(data){
-    userPlan=data.plan==='pro'&&data.status==='active'?'pro':'free';
-  } else {
-    // Create free subscription if not exists
-    await sb.from('subscriptions').insert({user_id:user.id,plan:'free',status:'active'}).onConflict('user_id').ignore();
+  try{
+    const{data,error}=await sb.from('subscriptions').select('plan,status,current_period_end').eq('user_id',user.id).maybeSingle();
+    if(data&&data.plan==='pro'&&data.status==='active'){
+      // Check if still valid
+      if(!data.current_period_end||new Date(data.current_period_end)>new Date()){
+        userPlan='pro';
+      } else {
+        userPlan='free';
+        // Expire it
+        await sb.from('subscriptions').update({status:'expired'}).eq('user_id',user.id);
+      }
+    } else {
+      userPlan='free';
+      if(!data){
+        // First time user - create free record
+        await sb.from('subscriptions').upsert({user_id:user.id,plan:'free',status:'active'},{onConflict:'user_id'});
+      }
+    }
+  }catch(e){
     userPlan='free';
+    console.log('Sub check error:',e.message);
   }
 }
 
