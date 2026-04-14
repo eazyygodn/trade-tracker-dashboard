@@ -181,22 +181,85 @@ input,select,textarea,button{font-family:var(--font)}
   transition:transform .25s cubic-bezier(.4,0,.2,1);
 }
 @media(max-width:768px){
+  /* Sidebar */
   .sidebar{transform:translateX(-100%) !important}
   .sidebar.open{transform:translateX(0) !important;box-shadow:20px 0 60px rgba(0,0,0,.6)}
   .mw{margin-left:0 !important;width:100% !important}
   .mbtn{display:flex !important}
-  table{min-width:700px !important;width:auto !important}
-  .stats{grid-template-columns:repeat(2,1fr) !important}
+
+  /* Topbar */
+  .topbar{padding:0 12px !important;gap:6px !important}
+  .page-ttl{font-size:13px !important}
+  .live-pill{display:none !important}
+  .tr-right{gap:5px !important}
+  .tr-right .btn{padding:5px 8px !important;font-size:11px !important}
+  .tr-right .btn-p{padding:6px 10px !important;font-size:11px !important}
+
+  /* Content */
+  .content{padding:10px !important}
+
+  /* Stats grid - 2 col on mobile */
+  .stats{grid-template-columns:repeat(2,1fr) !important;gap:6px !important}
+  .stat{padding:10px 12px !important}
+  .sv{font-size:18px !important}
+
+  /* Tables */
+  .tw{overflow-x:auto !important;-webkit-overflow-scrolling:touch;border-radius:8px !important}
+  table{min-width:600px !important;width:auto !important}
+  td,th{padding:7px 10px !important;font-size:11px !important}
+
+  /* Analytics */
   .ag{grid-template-columns:1fr !important}
   .rc{grid-template-columns:1fr !important}
-  .topbar{padding:0 14px !important}
-  .content{padding:12px !important}
-  .tw{overflow-x:auto !important;-webkit-overflow-scrolling:touch}
-  td,th{padding:7px 10px !important;font-size:11px !important}
-  .fgrid{grid-template-columns:1fr 1fr !important}
+
+  /* Detail panel */
   .dpg{grid-template-columns:repeat(2,1fr) !important}
-  .cg{gap:3px !important}
-  .cd{min-height:46px !important;padding:4px 2px !important}
+  .dp{padding:12px !important}
+
+  /* Calendar */
+  .cg{gap:2px !important}
+  .cd{min-height:40px !important;padding:3px 2px !important}
+  .cdn{font-size:9px !important}
+  .cpnl{font-size:9px !important}
+
+  /* Form */
+  .fgrid{grid-template-columns:1fr !important}
+  .fc2{padding:12px !important}
+
+  /* Auth card */
+  .auth-card{padding:24px 20px !important;border-radius:12px !important}
+  .auth-logo{font-size:18px !important}
+
+  /* Overview page hero */
+  .content [style*="font-size:42px"]{font-size:28px !important}
+  .content [style*="grid-template-columns:1fr 1fr 1fr"]{grid-template-columns:1fr !important}
+
+  /* Floating bubbles - move up on mobile to avoid keyboard */
+  #ai-bubble{bottom:16px !important;right:16px !important;width:46px !important;height:46px !important;font-size:18px !important}
+  #sup-bubble{bottom:70px !important;right:16px !important;width:46px !important;height:46px !important;font-size:18px !important}
+  #sup-badge{bottom:106px !important;right:12px !important}
+
+  /* AI + Support widgets - full width on mobile */
+  #ai-widget{width:calc(100vw - 20px) !important;right:10px !important;bottom:76px !important}
+  #sup-widget{width:calc(100vw - 20px) !important;right:10px !important;bottom:76px !important}
+
+  /* Import page */
+  #platform-guides .btn-p{padding:8px 16px !important;font-size:12px !important}
+
+  /* Journal filter pills */
+  .fb{gap:4px !important}
+  .fc{padding:3px 8px !important;font-size:10px !important}
+
+  /* Sidebar nav items */
+  .sb-a{font-size:13px !important;padding:7px 8px !important}
+}
+
+/* Extra small phones */
+@media(max-width:380px){
+  .stats{grid-template-columns:1fr 1fr !important}
+  .sv{font-size:16px !important}
+  .auth-card{padding:20px 16px !important}
+  .content{padding:8px !important}
 }
 .overlay{
   display:none;position:fixed;inset:0;
