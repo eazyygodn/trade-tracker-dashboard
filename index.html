@@ -791,7 +791,7 @@ async function resetPassword(){
   if(btn){btn.textContent='Sending...';btn.disabled=true;}
   try{
     const{error}=await sb.auth.resetPasswordForEmail(email,{
-      redirectTo:'https://eazyygodn.github.io/trade-tracker-dashboard/'
+      redirectTo:'https://tradetrackerpro.co/dashboard/'
     });
     if(error&&error.message&&!error.message.includes('fetch')){
       if(errEl)errEl.textContent=error.message;
@@ -2849,6 +2849,26 @@ function showPricing(){
   document.getElementById('coin-select').style.display='none';
 }
 
+let currentPlan = 'monthly';
+function selectPlan(plan){
+  currentPlan = plan;
+  const monthly = document.getElementById('plan-monthly');
+  const yearly = document.getElementById('plan-yearly');
+  const priceDisplay = document.getElementById('price-display');
+  const priceNote = document.getElementById('price-note');
+  if(plan === 'monthly'){
+    if(monthly){monthly.style.background='var(--ac)';monthly.style.color='#050510';}
+    if(yearly){yearly.style.background='none';yearly.style.color='var(--t2)';}
+    if(priceDisplay)priceDisplay.innerHTML='$14.99<span style="font-size:15px;color:var(--t2);font-weight:400">/mo</span>';
+    if(priceNote)priceNote.textContent='~15 USDT · billed monthly';
+  } else {
+    if(yearly){yearly.style.background='var(--ac)';yearly.style.color='#050510';}
+    if(monthly){monthly.style.background='none';monthly.style.color='var(--t2)';}
+    if(priceDisplay)priceDisplay.innerHTML='$9.99<span style="font-size:15px;color:var(--t2);font-weight:400">/mo</span><div style="font-size:13px;color:var(--t3);font-weight:400;margin-top:2px">$119.99 billed annually</div>';
+    if(priceNote)priceNote.textContent='~120 USDT · save $60/year vs monthly';
+  }
+}
+
 async function startPayment(){
   // Show coin selector
   document.getElementById('upg-pricing').style.display='none';
@@ -2867,11 +2887,11 @@ async function createInvoice(currency){
       method:'POST',
       headers:{'x-api-key':NP_KEY,'Content-Type':'application/json'},
       body:JSON.stringify({
-        price_amount:14.99,
+        price_amount: currentPlan==='yearly' ? 119.99 : 14.99,
         price_currency:'usd',
         pay_currency:currency,
         order_id:'ttp_'+user.id+'_'+Date.now(),
-        order_description:'Trade Tracker Pro - Monthly',
+        order_description: currentPlan==='yearly' ? 'Trade Tracker Pro - Annual' : 'Trade Tracker Pro - Monthly',
       })
     });
     const data=await res.json();
@@ -3041,30 +3061,45 @@ if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded"
     <div id="upgrade-content" style="padding:32px">
       <!-- DEFAULT: Pricing view -->
       <div id="upg-pricing">
-        <div style="text-align:center;margin-bottom:24px">
+        <div style="text-align:center;margin-bottom:20px">
           <div style="font-size:36px;margin-bottom:10px">🚀</div>
-          <div style="font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:8px">Upgrade to Pro</div>
-          <div style="font-size:14px;color:var(--t2);line-height:1.65">You've used your 20 free trades.<br>Upgrade to track unlimited trades.</div>
+          <div style="font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:6px">Upgrade to Pro</div>
+          <div style="font-size:13px;color:var(--t2);line-height:1.65">You've used your 20 free trades. Upgrade to track unlimited trades and unlock every feature.</div>
         </div>
 
-        <!-- Price card -->
-        <div style="background:var(--s2);border:1px solid var(--ac-bdr);border-radius:12px;padding:22px;margin-bottom:20px;text-align:center">
-          <div style="font-size:13px;color:var(--ac);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Pro Plan</div>
-          <div style="font-size:42px;font-weight:800;font-family:var(--mono);letter-spacing:-2px;color:var(--t1)">$14.99<span style="font-size:16px;color:var(--t2);font-weight:400">/mo</span></div>
-          <div style="font-size:12px;color:var(--t3);margin-top:4px">~15 USDT · paid in crypto</div>
+        <!-- Plan toggle -->
+        <div style="display:flex;background:var(--bg);border:1px solid var(--b1);border-radius:8px;padding:3px;margin-bottom:16px;gap:2px" id="plan-toggle">
+          <button onclick="selectPlan('monthly')" id="plan-monthly" style="flex:1;padding:8px;background:var(--ac);border:none;border-radius:6px;color:#050510;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)">Monthly</button>
+          <button onclick="selectPlan('yearly')" id="plan-yearly" style="flex:1;padding:8px;background:none;border:none;border-radius:6px;color:var(--t2);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);position:relative">
+            Annual <span style="background:var(--green);color:#050510;font-size:9px;font-weight:800;padding:2px 5px;border-radius:4px;margin-left:4px">-33%</span>
+          </button>
+        </div>
+
+        <!-- Price display -->
+        <div style="background:var(--s2);border:1px solid var(--ac-bdr);border-radius:12px;padding:20px;margin-bottom:16px;text-align:center">
+          <div style="font-size:13px;color:var(--ac);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Pro Plan</div>
+          <div id="price-display" style="font-size:40px;font-weight:800;font-family:var(--mono);letter-spacing:-2px;color:var(--t1)">$14.99<span style="font-size:15px;color:var(--t2);font-weight:400">/mo</span></div>
+          <div id="price-note" style="font-size:12px;color:var(--t3);margin-top:4px">~15 USDT · billed monthly</div>
         </div>
 
         <!-- Features -->
-        <div style="margin-bottom:22px">
-          ${['Unlimited trades','All analytics reports','AI trading coach','Playbooks & strategies','Session analysis','MT4/MT5 auto-sync','Priority support'].map(f=>`
-            <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--b0)">
-              <span style="color:var(--green);font-size:14px">✓</span>
-              <span style="font-size:13px;color:var(--t1)">${f}</span>
+        <div style="margin-bottom:18px">
+          ${[
+            ['Unlimited trades','No limits ever'],
+            ['All analytics reports','Sessions, equity curve, drawdown & more'],
+            ['AI trading coach','Analyses your actual stats'],
+            ['Playbooks & strategies','Track performance per setup'],
+            ['MT4/MT5 auto-sync','Trades appear in seconds'],
+            ['Priority support','We reply within 24 hours'],
+          ].map(([f,d])=>`
+            <div style="display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid var(--b0)">
+              <span style="color:var(--green);font-size:14px;margin-top:1px;flex-shrink:0">✓</span>
+              <div><div style="font-size:13px;color:var(--t1);font-weight:500">${f}</div><div style="font-size:11px;color:var(--t3);margin-top:1px">${d}</div></div>
             </div>`).join('')}
         </div>
 
-        <button class="btn-p" onclick="startPayment()" style="width:100%;padding:14px;font-size:15px">Pay with Crypto →</button>
-        <div style="text-align:center;font-size:11px;color:var(--t3);margin-top:10px">USDT, BTC, ETH, and 350+ coins · Instant activation</div>
+        <button class="btn-p" onclick="startPayment()" style="width:100%;padding:13px;font-size:15px">Pay with Crypto →</button>
+        <div style="text-align:center;font-size:11px;color:var(--t3);margin-top:8px">USDT, BTC, ETH, and 350+ coins · Instant activation · No recurring charge</div>
       </div>
 
       <!-- PAYMENT VIEW -->
