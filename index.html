@@ -2856,11 +2856,16 @@ async function createInvoice(currency){
       })
     });
     const data=await res.json();
-    if(data.payment_address){
+    const addr = data.payment_address || data.pay_address;
+    if(addr || data.payment_id){
       window._currentPaymentId=data.payment_id;
-      document.getElementById('pay-address').textContent=data.payment_address;
+      // Set address - use textContent to avoid XSS, decode if needed
+      const addrEl = document.getElementById('pay-address');
+      addrEl.textContent = addr || 'Loading address...';
+      // Store for copy
+      window._currentAddress = addr;
       document.getElementById('pay-amount').textContent=parseFloat(data.pay_amount).toFixed(6);
-      document.getElementById('pay-currency').textContent=currency.toUpperCase()+' · '+data.network;
+      document.getElementById('pay-currency').textContent=(data.pay_currency||currency).toUpperCase()+' · '+(data.network||'');
       document.getElementById('pay-status').innerHTML='<span class="spin"></span> Waiting for payment...';
       startPaymentTimer(20*60);
       startPaymentPoller(data.payment_id);
@@ -2873,8 +2878,8 @@ async function createInvoice(currency){
 }
 
 function copyAddress(){
-  const addr=document.getElementById('pay-address').textContent;
-  navigator.clipboard.writeText(addr).then(()=>toast('Address copied!','ok'));
+  const addr=window._currentAddress||document.getElementById('pay-address').textContent;
+  navigator.clipboard.writeText(addr).then(()=>toast('Address copied! ✓','ok'));
 }
 
 function startPaymentTimer(seconds){
