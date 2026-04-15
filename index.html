@@ -791,7 +791,7 @@ async function resetPassword(){
   if(btn){btn.textContent='Sending...';btn.disabled=true;}
   try{
     const{error}=await sb.auth.resetPasswordForEmail(email,{
-      redirectTo:'https://tradetrackerpro.co/dashboard/'
+      redirectTo:'https://app.tradetrackerpro.co/'
     });
     if(error&&error.message&&!error.message.includes('fetch')){
       if(errEl)errEl.textContent=error.message;
