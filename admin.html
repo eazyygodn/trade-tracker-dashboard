@@ -97,6 +97,9 @@ let allTickets=[], currentFilter='all';
 async function adminLogin(){
   const email=document.getElementById('adm-email').value;
   const pass=document.getElementById('adm-pass').value;
+  if(email.toLowerCase() !== 'turanruhi@outlook.com'){
+    document.getElementById('adm-err').textContent='Access denied.';return;
+  }
   const{data,error}=await sb.auth.signInWithPassword({email,password:pass});
   if(error){document.getElementById('adm-err').textContent=error.message;return;}
   document.getElementById('adm-user').textContent=data.user.email;
