@@ -2497,7 +2497,22 @@ function renderSetup(){
 
           <!-- Windows instructions -->
           <div id="os-windows-steps">
-            <div style="font-size:13px;color:var(--t2);margin-bottom:8px">Our one-click installer handles everything automatically on Windows.</div>
+            <div style="font-size:13px;color:var(--t2);margin-bottom:12px;line-height:1.7">Our one-click installer handles everything automatically on Windows. It finds your MT4/MT5, copies the EA file, and sets up your config.</div>
+            <div style="font-size:13px;color:var(--t2);line-height:1.9;margin-bottom:14px">
+              <div style="padding:5px 0;border-bottom:1px solid var(--b0);display:flex;gap:10px"><span style="color:var(--ac);font-weight:700;flex-shrink:0">1.</span><span>Click the button below to download the installer ZIP</span></div>
+              <div style="padding:5px 0;border-bottom:1px solid var(--b0);display:flex;gap:10px"><span style="color:var(--ac);font-weight:700;flex-shrink:0">2.</span><span><strong style="color:var(--t1)">Close MT5</strong> completely before running</span></div>
+              <div style="padding:5px 0;border-bottom:1px solid var(--b0);display:flex;gap:10px"><span style="color:var(--ac);font-weight:700;flex-shrink:0">3.</span><span>Extract the ZIP → double-click <strong style="color:var(--t1)">Install Trade Tracker Pro.bat</strong></span></div>
+              <div style="padding:5px 0;border-bottom:1px solid var(--b0);display:flex;gap:10px"><span style="color:var(--ac);font-weight:700;flex-shrink:0">4.</span><span>Paste your <strong style="color:var(--t1)">API Key</strong> and <strong style="color:var(--t1)">User ID</strong> when asked</span></div>
+              <div style="padding:5px 0;border-bottom:1px solid var(--b0);display:flex;gap:10px"><span style="color:var(--ac);font-weight:700;flex-shrink:0">5.</span><span>Open MT5 → drag <strong style="color:var(--t1)">TradeTrackerPro</strong> onto any chart</span></div>
+              <div style="padding:5px 0;display:flex;gap:10px"><span style="color:var(--ac);font-weight:700;flex-shrink:0">6.</span><span>Enable <strong style="color:var(--t1)">Algo Trading</strong> in the toolbar — done!</span></div>
+            </div>
+            <a href="https://drive.google.com/uc?export=download&id=1V4D9BqREvOzxjpQXWkCa6QjtavDdn7-H" target="_blank" style="text-decoration:none">
+              <div style="background:rgba(0,212,170,.08);border:1px solid rgba(0,212,170,.25);border-radius:9px;padding:14px;text-align:center;cursor:pointer">
+                <div style="font-size:15px;margin-bottom:6px">⬇</div>
+                <div style="font-size:13px;font-weight:700;color:var(--green)">Download Windows Installer (.zip)</div>
+                <div style="font-size:11px;color:var(--t2);margin-top:3px">Includes EA + auto-installer · Windows 10 & 11 only</div>
+              </div>
+            </a>
           </div>
 
           <!-- Mac instructions -->
@@ -2532,12 +2547,7 @@ function renderSetup(){
               </a>
               <div style="font-size:11px;color:var(--t3);margin-top:8px">⚠️ The ZIP installer is Windows-only. Mac users only need this .mq5 file.</div>
             </div>
-            <a href="https://drive.google.com/uc?export=download&id=1V4D9BqREvOzxjpQXWkCa6QjtavDdn7-H" target="_blank" style="text-decoration:none;display:block;margin-top:14px">
-              <div style="background:rgba(0,212,170,.08);border:1px solid rgba(0,212,170,.25);border-radius:9px;padding:14px;text-align:center;cursor:pointer">
-                <div style="font-size:13px;font-weight:700;color:var(--green)">⬇ Download EA file (.mq5)</div>
-                <div style="font-size:11px;color:var(--t2);margin-top:3px">Manual install for Mac / CrossOver / Parallels</div>
-              </div>
-            </a>
+
           </div>
         </div>
   </div>`;
