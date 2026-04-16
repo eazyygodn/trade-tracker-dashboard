@@ -909,7 +909,7 @@ function sb2(s){return`<span class="badge ${s}">${s}</span>`}
 function calc(t){
   // Support both field naming conventions
   const e=+(t.entry_price||t.open_price||0);
-  const ex_price=t.exit_price!=null?t.exit_price:t.close_price;
+  const ex_price=(t.close_price||t.exit_price)!=null?(t.close_price||t.exit_price):t.close_price;
   const sl=+(t.stop_loss||t.sl||0);
   const tp=+(t.take_profit||t.tp||0);
   const lo=+(t.lots||t.volume||t.size||1);
@@ -923,7 +923,7 @@ function calc(t){
   if(isClosed){
     const ex=ex_price!=null?+ex_price:e;
     // Use stored P&L if available (most accurate)
-    pnl=t.pnl!=null?+t.pnl:t.profit!=null?+t.profit:(isB?(ex-e)*lo:(e-ex)*lo);
+    pnl=t.pnl!=null?+t.pnl:(t.pnl||t.profit||0)!=null?+(t.pnl||t.profit||0):(isB?(ex-e)*lo:(e-ex)*lo);
     status=pnl>0.01?'win':pnl<-0.01?'loss':'be';
     if(risk>0){const actual=isB?(ex-e):(e-ex);rr=actual/risk;}
   }
@@ -931,14 +931,14 @@ function calc(t){
   return{rr,pnl,status,rp};
 }
 function getStats(){
-  const cl=trades.filter(t=>t.exit_price!=null||t.status==='closed'),ca=cl.map(t=>({...t,...calc(t)}));
+  const cl=trades.filter(t=>(t.close_price||t.exit_price)!=null||t.status==='closed'),ca=cl.map(t=>({...t,...calc(t)}));
   const wi=ca.filter(c=>c.status==='win'),lo=ca.filter(c=>c.status==='loss');
   const total=ca.reduce((s,c)=>s+(c.pnl||0),0),wr=cl.length?wi.length/cl.length*100:0,aRR=cl.length?ca.reduce((s,c)=>s+c.rr,0)/cl.length:0;
   const gw=wi.reduce((s,c)=>s+Math.abs(c.pnl||0),0),gl=lo.reduce((s,c)=>s+Math.abs(c.pnl||0),0),pf=gl>0?gw/gl:(gw>0?99:0);
   let str=0,sT='';
   for(let i=trades.length-1;i>=0;i--){if(!trades[i].exit_price)continue;const s=calc(trades[i]).status;if(s==='be')continue;if(!sT){sT=s;str=1;}else if(s===sT)str++;else break;}
   let pk=0,dd=0,run=0;ca.forEach(c=>{run+=(c.pnl||0);if(run>pk)pk=run;if(run-pk<dd)dd=run-pk;});
-  return{total,wr,aRR,pf,str,sT,wins:wi.length,losses:lo.length,be:ca.filter(c=>c.status==='be').length,closed:cl.length,open:trades.filter(t=>!t.exit_price).length,maxDD:dd,calcs:ca};
+  return{total,wr,aRR,pf,str,sT,wins:wi.length,losses:lo.length,be:ca.filter(c=>c.status==='be').length,closed:cl.length,open:trades.filter(t=>!(t.close_price||t.exit_price)).length,maxDD:dd,calcs:ca};
 }
 
 function render(){
@@ -1075,8 +1075,8 @@ function renderOverview(){
         <tbody>${recent.map(t=>{const c=calc(t);const pc=c.pnl==null?'':c.pnl>=0?'color:var(--green)':'color:var(--red)';return`<tr class="tr" onclick="go('trades',null)">
           <td>${(t.open_time||'').slice(0,10)}</td>
           <td style="font-weight:600">${t.symbol}</td>
-          <td class="${t.direction}">${t.direction}</td>
-          <td>${fmt(+t.entry_price)}</td>
+          <td class="${t.type||t.direction}">${(t.type||t.direction||'').toUpperCase()}</td>
+          <td>${fmt(+(t.open_price||t.entry_price||0))}</td>
           <td style="${pc}">${c.pnl!=null?(c.pnl>=0?'+':'')+'$'+Math.abs(c.pnl).toFixed(2):'—'}</td>
           <td>${sb2(c.status)}</td>
         </tr>`;}).join('')}</tbody>
@@ -1188,7 +1188,7 @@ function renderAI(){
 Win rate: ${s.wr.toFixed(1)}%. Avg R:R: ${s.aRR.toFixed(2)}. Profit factor: ${s.pf.toFixed(2)}.
 Total P&L: $${s.total.toFixed(2)}. Max drawdown: $${Math.abs(s.maxDD).toFixed(2)}.
 Symbols traded: ${[...new Set(trades.map(t=>t.symbol))].join(', ')}.
-Recent trades: ${cl.slice(0,5).map(t=>`${t.symbol} ${t.direction} ${t.profit>=0?'+':''}$${(t.profit||0).toFixed(2)}`).join(', ')}.`;
+Recent trades: ${cl.slice(0,5).map(t=>`${t.symbol} ${(t.type||t.direction||"")} ${(t.pnl||t.profit||0)>=0?'+':''}$${(t.profit||0).toFixed(2)}`).join(', ')}.`;
 
   el.innerHTML=`
     <div style="max-width:720px;display:flex;flex-direction:column;height:calc(100vh - 140px)">
@@ -1852,7 +1852,7 @@ function renderTrades(){
     el.innerHTML=banner;
   } else { el.innerHTML=''; }
   if(!trades.length){el.innerHTML=`<div class="es"><div class="ei">📊</div><div class="et">No trades yet</div><div class="ed">Connect your MT4/MT5 EA to auto-log trades, or add one manually.</div><div class="eb"><button class="btn-p" onclick="go('setup',null)">⚡ Setup guide</button><button class="btn" onclick="toggleForm()">+ Log manually</button></div></div>`;return;}
-  el.innerHTML=`<div class="tw"><table><thead><tr><th>Date</th><th>Symbol</th><th>Dir</th><th>Entry</th><th>Exit</th><th>R:R</th><th>Risk%</th><th>P&L</th><th>Grade</th><th>Mood</th><th>Result</th><th></th></tr></thead><tbody>${[...trades].map(t=>{const{rr,pnl,status,rp}=calc(t);const pc=pnl==null?'':pnl>=0?'color:var(--green)':'color:var(--red)';const rpc=rp>2?'color:var(--red)':rp>1?'color:var(--amber)':'';return`<tr class="tr${selId===t.id?' sel':''}" onclick="selectTrade('${t.id}')"><td>${(t.open_time||'').slice(0,10)}</td><td style="font-weight:600">${t.symbol||''}<span style="font-size:9px;color:var(--t3);display:block;margin-top:1px">${t.account_label||''}</span></td><td class="${t.direction}">${t.direction}</td><td>${fmt(+t.entry_price)}</td><td>${t.exit_price!=null?fmt(+t.exit_price):'—'}</td><td><div style="display:flex;align-items:center;gap:4px"><span>${rr.toFixed(2)}</span><div style="height:3px;width:${Math.min(rr*11,40).toFixed(0)}px;background:var(--green);border-radius:2px"></div></div></td><td style="${rpc}">${rp>0?rp.toFixed(1)+'%':'—'}</td><td style="${pc}">${pnl!=null?(pnl>=0?'+':'')+'$'+Math.abs(pnl).toFixed(2):'—'}</td><td>${gb(t.grade)}</td><td>${eb(t.emotion)}</td><td>${sb2(status)}</td><td><button class="btn-x" onclick="event.stopPropagation();delTrade('${t.id}')">×</button></td></tr>`;}).join('')}</tbody></table></div>`;
+  el.innerHTML=`<div class="tw"><table><thead><tr><th>Date</th><th>Symbol</th><th>Dir</th><th>Entry</th><th>Exit</th><th>R:R</th><th>Risk%</th><th>P&L</th><th>Grade</th><th>Mood</th><th>Result</th><th></th></tr></thead><tbody>${[...trades].map(t=>{const{rr,pnl,status,rp}=calc(t);const pc=pnl==null?'':pnl>=0?'color:var(--green)':'color:var(--red)';const rpc=rp>2?'color:var(--red)':rp>1?'color:var(--amber)':'';return`<tr class="tr${selId===t.id?' sel':''}" onclick="selectTrade('${t.id}')"><td>${(t.open_time||'').slice(0,10)}</td><td style="font-weight:600">${t.symbol||''}<span style="font-size:9px;color:var(--t3);display:block;margin-top:1px">${t.account_label||''}</span></td><td class="${(t.type||t.direction||"")}">${(t.type||t.direction||"")}</td><td>${fmt(+(t.open_price||t.entry_price||0))}</td><td>${(t.close_price||t.exit_price)!=null?fmt(+(t.close_price||t.exit_price)):'—'}</td><td><div style="display:flex;align-items:center;gap:4px"><span>${rr.toFixed(2)}</span><div style="height:3px;width:${Math.min(rr*11,40).toFixed(0)}px;background:var(--green);border-radius:2px"></div></div></td><td style="${rpc}">${rp>0?rp.toFixed(1)+'%':'—'}</td><td style="${pc}">${pnl!=null?(pnl>=0?'+':'')+'$'+Math.abs(pnl).toFixed(2):'—'}</td><td>${gb(t.grade)}</td><td>${eb(t.emotion)}</td><td>${sb2(status)}</td><td><button class="btn-x" onclick="event.stopPropagation();delTrade('${t.id}')">×</button></td></tr>`;}).join('')}</tbody></table></div>`;
 }
 function selectTrade(id){
   selId=selId===id?null:id;renderTrades();
@@ -1861,7 +1861,7 @@ function selectTrade(id){
   const t=trades.find(x=>x.id===id);if(!t)return;
   const{rr,pnl,status,rp}=calc(t),pc=pnl!=null?`color:${pnl>=0?'var(--green)':'var(--red)'}`:'';
   dp.style.display='block';
-  dp.innerHTML=`<div class="dp"><div class="dph"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-family:var(--font);font-size:17px;font-weight:700">${t.symbol}</span><span class="${t.direction}">${t.direction}</span>${gb(t.grade)}${eb(t.emotion)}${sb2(status)}</div><button class="btn-x" style="font-size:20px" onclick="selectTrade('${id}')">×</button></div><div class="dpg"><div class="dpb"><div class="dl">Market</div><div class="dv">${t.market||'—'}</div></div><div class="dpb"><div class="dl">Date</div><div class="dv">${(t.open_time||'').slice(0,10)}</div></div><div class="dpb"><div class="dl">Entry</div><div class="dv">${fmt(+t.entry_price)}</div></div><div class="dpb"><div class="dl">Stop Loss</div><div class="dv">${t.stop_loss?fmt(+t.stop_loss):'—'}</div></div><div class="dpb"><div class="dl">Take Profit</div><div class="dv">${t.take_profit?fmt(+t.take_profit):'—'}</div></div><div class="dpb"><div class="dl">Exit</div><div class="dv">${t.exit_price!=null?fmt(+t.exit_price):'still open'}</div></div><div class="dpb"><div class="dl">Lots</div><div class="dv">${t.lots||1}</div></div><div class="dpb"><div class="dl">Hold time</div><div class="dv">${(()=>{if(!t.close_time)return "open";const ms=new Date(t.close_time)-new Date(t.open_time);const m=Math.floor(ms/60000);return m<60?m+"m":Math.floor(m/60)+"h "+( m%60)+"m";})()}</div></div><div class="dpb"><div class="dl">R:R</div><div class="dv">${rr.toFixed(2)}</div></div><div class="dpb"><div class="dl">Risk %</div><div class="dv" style="${rp>2?'color:var(--red)':rp>1?'color:var(--amber)':''}">${rp>0?rp.toFixed(2)+'%':'—'}</div></div><div class="dpb"><div class="dl">P&L</div><div class="dv" style="${pc}">${pnl!=null?(pnl>=0?'+':'')+'$'+pnl.toFixed(2):'open'}</div></div></div>${t.screenshot_url?`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span class="dl">Screenshot</span><button class="btn-d" style="font-size:11px;padding:2px 8px" onclick="removeScreenshot('${id}')">🗑 Remove</button></div><div style="margin-bottom:12px"><img src="${t.screenshot_url}" style="width:100%;border-radius:8px;border:1px solid var(--b1);cursor:pointer" onclick="window.open('${t.screenshot_url}','_blank')"></div>`:''}${t.notes?`<div class="dl" style="margin-bottom:6px">Notes</div><div class="nb">${t.notes}</div>`:''}<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" style="font-size:12px" onclick="document.getElementById('ea-${id}').style.display=document.getElementById('ea-${id}').style.display==='none'?'block':'none'">✏️ Edit notes & grade</button>${t.screenshot_url?'':`<button class="btn" style="font-size:12px" onclick="triggerScreenshot('${id}')">📷 Add screenshot</button>`}</div><input type="file" id="sc-${id}" style="display:none" accept="image/*" onchange="uploadScreenshot('${id}',this)"><div class="ea" id="ea-${id}"><textarea id="ea-notes" placeholder="Add notes...">${t.notes||''}</textarea><div style="margin-bottom:8px"><input id="ea-setup" style="width:100%;background:var(--bg);border:1px solid var(--b2);border-radius:var(--r);padding:8px 10px;color:var(--t1);font-size:13px;outline:none;font-family:var(--font)" placeholder="Setup / Playbook (e.g. Break & Retest)" value="${t.setup||''}"></div><div class="ea-row"><select id="ea-grade"><option value="">— Grade</option>${['A','B','C','D'].map(g=>`<option value="${g}"${t.grade===g?' selected':''}>${g}</option>`).join('')}</select><select id="ea-emo"><option value="">— Emotion</option>${['calm','confident','anxious','fomo','revenge','bored'].map(e=>`<option value="${e}"${t.emotion===e?' selected':''}>${e}</option>`).join('')}</select><button class="btn-p" style="font-size:12px;padding:6px 13px" onclick="saveNotes('${id}')">Save</button><button class="btn" style="font-size:12px" onclick="document.getElementById('ea-${id}').style.display='none'">Cancel</button></div></div></div>`;
+  dp.innerHTML=`<div class="dp"><div class="dph"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-family:var(--font);font-size:17px;font-weight:700">${t.symbol}</span><span class="${(t.type||t.direction||"")}">${(t.type||t.direction||"")}</span>${gb(t.grade)}${eb(t.emotion)}${sb2(status)}</div><button class="btn-x" style="font-size:20px" onclick="selectTrade('${id}')">×</button></div><div class="dpg"><div class="dpb"><div class="dl">Market</div><div class="dv">${t.market||'—'}</div></div><div class="dpb"><div class="dl">Date</div><div class="dv">${(t.open_time||'').slice(0,10)}</div></div><div class="dpb"><div class="dl">Entry</div><div class="dv">${fmt(+(t.open_price||t.entry_price||0))}</div></div><div class="dpb"><div class="dl">Stop Loss</div><div class="dv">${t.stop_loss?fmt(+t.stop_loss):'—'}</div></div><div class="dpb"><div class="dl">Take Profit</div><div class="dv">${t.take_profit?fmt(+t.take_profit):'—'}</div></div><div class="dpb"><div class="dl">Exit</div><div class="dv">${(t.close_price||t.exit_price)!=null?fmt(+(t.close_price||t.exit_price)):'still open'}</div></div><div class="dpb"><div class="dl">Lots</div><div class="dv">${t.lots||1}</div></div><div class="dpb"><div class="dl">Hold time</div><div class="dv">${(()=>{if(!t.close_time)return "open";const ms=new Date(t.close_time)-new Date(t.open_time);const m=Math.floor(ms/60000);return m<60?m+"m":Math.floor(m/60)+"h "+( m%60)+"m";})()}</div></div><div class="dpb"><div class="dl">R:R</div><div class="dv">${rr.toFixed(2)}</div></div><div class="dpb"><div class="dl">Risk %</div><div class="dv" style="${rp>2?'color:var(--red)':rp>1?'color:var(--amber)':''}">${rp>0?rp.toFixed(2)+'%':'—'}</div></div><div class="dpb"><div class="dl">P&L</div><div class="dv" style="${pc}">${pnl!=null?(pnl>=0?'+':'')+'$'+pnl.toFixed(2):'open'}</div></div></div>${t.screenshot_url?`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span class="dl">Screenshot</span><button class="btn-d" style="font-size:11px;padding:2px 8px" onclick="removeScreenshot('${id}')">🗑 Remove</button></div><div style="margin-bottom:12px"><img src="${t.screenshot_url}" style="width:100%;border-radius:8px;border:1px solid var(--b1);cursor:pointer" onclick="window.open('${t.screenshot_url}','_blank')"></div>`:''}${t.notes?`<div class="dl" style="margin-bottom:6px">Notes</div><div class="nb">${t.notes}</div>`:''}<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" style="font-size:12px" onclick="document.getElementById('ea-${id}').style.display=document.getElementById('ea-${id}').style.display==='none'?'block':'none'">✏️ Edit notes & grade</button>${t.screenshot_url?'':`<button class="btn" style="font-size:12px" onclick="triggerScreenshot('${id}')">📷 Add screenshot</button>`}</div><input type="file" id="sc-${id}" style="display:none" accept="image/*" onchange="uploadScreenshot('${id}',this)"><div class="ea" id="ea-${id}"><textarea id="ea-notes" placeholder="Add notes...">${t.notes||''}</textarea><div style="margin-bottom:8px"><input id="ea-setup" style="width:100%;background:var(--bg);border:1px solid var(--b2);border-radius:var(--r);padding:8px 10px;color:var(--t1);font-size:13px;outline:none;font-family:var(--font)" placeholder="Setup / Playbook (e.g. Break & Retest)" value="${t.setup||''}"></div><div class="ea-row"><select id="ea-grade"><option value="">— Grade</option>${['A','B','C','D'].map(g=>`<option value="${g}"${t.grade===g?' selected':''}>${g}</option>`).join('')}</select><select id="ea-emo"><option value="">— Emotion</option>${['calm','confident','anxious','fomo','revenge','bored'].map(e=>`<option value="${e}"${t.emotion===e?' selected':''}>${e}</option>`).join('')}</select><button class="btn-p" style="font-size:12px;padding:6px 13px" onclick="saveNotes('${id}')">Save</button><button class="btn" style="font-size:12px" onclick="document.getElementById('ea-${id}').style.display='none'">Cancel</button></div></div></div>`;
   checkAndShowLimitBanner();
 }
 function renderJournal(){
@@ -1869,7 +1869,7 @@ function renderJournal(){
   const grades=['all','A','B','C','D'],emos=['all','calm','confident','anxious','fomo','revenge','bored'];
   const f=[...trades].filter(t=>(jG==='all'||t.grade===jG)&&(jE==='all'||t.emotion===jE));
   el.innerHTML=`<div style="margin-bottom:12px"><input id="j-search" placeholder="🔍 Search notes, symbols, setups..." style="width:100%;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);padding:10px 14px;color:var(--t1);font-size:13px;outline:none;font-family:var(--font)" oninput="filterJournal(this.value)"></div><div class="fb"><span class="fl">Grade</span>${grades.map(g=>`<button class="fc${jG===g?' on':''}" onclick="jG='${g}';renderJournal()">${g}</button>`).join('')}<span class="fl" style="margin-left:8px">Emotion</span>${emos.map(e=>`<button class="fc${jE===e?' on':''}" onclick="jE='${e}';renderJournal()">${e}</button>`).join('')}</div>${!f.length?`<div class="es"><div class="ei">📓</div><div class="et">No entries match</div><div class="ed">Try a different filter or add notes to your trades.</div></div>`:f.map(t=>{const c=calc(t),pc=c.pnl!=null?`color:${c.pnl>=0?'var(--green)':'var(--red)'}`:''
-  return`<div class="jc"><div class="jch"><span style="font-weight:600">${t.symbol}</span><span class="${t.direction}" style="font-size:12px">${t.direction}</span><span style="font-size:11px;color:var(--t2)">${(t.open_time||'').slice(0,10)}</span>${gb(t.grade)}${eb(t.emotion)}${sb2(c.status)}<span style="margin-left:auto;font-family:var(--mono);font-size:12px;${pc}">${c.pnl!=null?(c.pnl>=0?'+':'')+'$'+Math.abs(c.pnl).toFixed(2):'open'}</span></div><div class="jn">${t.notes||'<span style="color:var(--muted2)">no notes — click the trade row to add notes</span>'}</div></div>`;}).join('')}`;
+  return`<div class="jc"><div class="jch"><span style="font-weight:600">${t.symbol}</span><span class="${(t.type||t.direction||"")}" style="font-size:12px">${(t.type||t.direction||"")}</span><span style="font-size:11px;color:var(--t2)">${(t.open_time||'').slice(0,10)}</span>${gb(t.grade)}${eb(t.emotion)}${sb2(c.status)}<span style="margin-left:auto;font-family:var(--mono);font-size:12px;${pc}">${c.pnl!=null?(c.pnl>=0?'+':'')+'$'+Math.abs(c.pnl).toFixed(2):'open'}</span></div><div class="jn">${t.notes||'<span style="color:var(--muted2)">no notes — click the trade row to add notes</span>'}</div></div>`;}).join('')}`;
 }
 function filterJournal(query){
   const q=query.toLowerCase().trim();
@@ -1882,13 +1882,13 @@ function filterJournal(query){
 function renderCalendar(){
   const el=document.getElementById('tab-calendar');
   const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
-  const byDay={};trades.filter(t=>t.exit_price&&t.open_time).forEach(t=>{const c=calc(t),d=(t.open_time||'').slice(0,10);if(!byDay[d])byDay[d]={pnl:0,n:0};byDay[d].pnl+=(c.pnl||0);byDay[d].n++;});
+  const byDay={};trades.filter(t=>(t.close_price||t.exit_price)&&t.open_time).forEach(t=>{const c=calc(t),d=(t.open_time||'').slice(0,10);if(!byDay[d])byDay[d]={pnl:0,n:0};byDay[d].pnl+=(c.pnl||0);byDay[d].n++;});
   const today=new Date().toISOString().slice(0,10),first=new Date(calY,calM,1),dow=(first.getDay()+6)%7,days=new Date(calY,calM+1,0).getDate();
   let grid=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d=>`<div class="ch">${d}</div>`).join('');
   for(let i=0;i<dow;i++)grid+=`<div class="cd empty"></div>`;
   for(let d=1;d<=days;d++){const ds=`${calY}-${String(calM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;const info=byDay[ds];const bg=info?(info.pnl>=0?`rgba(16,217,138,${Math.min(.06+Math.abs(info.pnl)/600,.45)})`:`rgba(240,80,104,${Math.min(.06+Math.abs(info.pnl)/600,.45)})`):'var(--card2)';grid+=`<div class="cd${info?' hastr':''}${ds===today?' today':''}${ds===calSel?' sel':''}" style="background:${bg}" onclick="${info?`calClick('${ds}')`:''}"><div class="cdn">${d}</div>${info?`<div class="cpnl" style="color:${info.pnl>=0?'var(--green)':'var(--red)'}">${info.pnl>=0?'+':''}$${Math.abs(info.pnl).toFixed(0)}</div><div style="font-size:9px;color:var(--t2)">${info.n}T</div>`:''}</div>`;}
   let detail='';
-  if(calSel&&byDay[calSel]){const dt=trades.filter(t=>(t.open_time||'').startsWith(calSel)&&t.exit_price);detail=`<div class="cdd"><div style="font-family:var(--font);font-weight:700;margin-bottom:11px">${calSel} — ${dt.length} trade${dt.length!==1?'s':''}</div>${dt.map(t=>{const c=calc(t),col=c.pnl>=0?'var(--green)':'var(--red)';return`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--b);font-size:13px;flex-wrap:wrap"><span style="font-weight:600">${t.symbol}</span><span class="${t.direction}">${t.direction}</span>${gb(t.grade)}<span style="margin-left:auto;font-family:var(--mono);color:${col}">${(c.pnl>=0?'+':'')+'$'+Math.abs(c.pnl).toFixed(2)}</span><span style="color:var(--t2);font-family:var(--mono)">R:${c.rr.toFixed(2)}</span></div>`;}).join('')}</div>`;}
+  if(calSel&&byDay[calSel]){const dt=trades.filter(t=>(t.open_time||'').startsWith(calSel)&&(t.close_price||t.exit_price));detail=`<div class="cdd"><div style="font-family:var(--font);font-weight:700;margin-bottom:11px">${calSel} — ${dt.length} trade${dt.length!==1?'s':''}</div>${dt.map(t=>{const c=calc(t),col=c.pnl>=0?'var(--green)':'var(--red)';return`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--b);font-size:13px;flex-wrap:wrap"><span style="font-weight:600">${t.symbol}</span><span class="${(t.type||t.direction||"")}">${(t.type||t.direction||"")}</span>${gb(t.grade)}<span style="margin-left:auto;font-family:var(--mono);color:${col}">${(c.pnl>=0?'+':'')+'$'+Math.abs(c.pnl).toFixed(2)}</span><span style="color:var(--t2);font-family:var(--mono)">R:${c.rr.toFixed(2)}</span></div>`;}).join('')}</div>`;}
   el.innerHTML=`<div class="cn"><button class="btn" onclick="calMv(-1)">← Prev</button><div class="ct">${months[calM]} ${calY}</div><button class="btn" onclick="calMv(1)">Next →</button></div><div class="cg">${grid}</div>${detail}`;
 }
 function calMv(d){calM+=d;if(calM>11){calM=0;calY++;}if(calM<0){calM=11;calY--;}calSel=null;renderCalendar();}
@@ -2091,7 +2091,7 @@ function renderAnalytics(){
   el.innerHTML+=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-bottom:10px"><div class="ac"><div class="at">Session analysis</div>${_sessHTML}</div></div>`;
 }
 
-function getPeriods(gfn){const map={};trades.filter(t=>t.exit_price).forEach(t=>{const c=calc(t),k=gfn((t.open_time||''));if(!map[k])map[k]={pnl:0,wins:0,losses:0,be:0,total:0};map[k].pnl+=(c.pnl||0);map[k].total++;if(c.status==='win')map[k].wins++;else if(c.status==='loss')map[k].losses++;else map[k].be++;});return Object.entries(map).sort((a,b)=>b[0].localeCompare(a[0]));}
+function getPeriods(gfn){const map={};trades.filter(t=>(t.close_price||t.exit_price)).forEach(t=>{const c=calc(t),k=gfn((t.open_time||''));if(!map[k])map[k]={pnl:0,wins:0,losses:0,be:0,total:0};map[k].pnl+=(c.pnl||0);map[k].total++;if(c.status==='win')map[k].wins++;else if(c.status==='loss')map[k].losses++;else map[k].be++;});return Object.entries(map).sort((a,b)=>b[0].localeCompare(a[0]));}
 function wk(d){try{const dt=new Date(d),dy=dt.getDay()||7;dt.setDate(dt.getDate()-dy+1);return dt.toISOString().split('T')[0];}catch{return d;}}
 function buildPT(entries,label){
   if(!entries.length)return`<div class="es"><div class="ei">📆</div><div class="et">No data yet</div><div class="ed">Closed trades will appear here.</div></div>`;
@@ -2231,7 +2231,7 @@ function renderPlaybooks(){
         ${data.trades.slice(-3).reverse().map(t=>`
           <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--b1);font-size:12px">
             <span style="color:var(--t2)">${(t.open_time||'').slice(0,10)}</span>
-            <span class="${t.direction}">${t.direction}</span>
+            <span class="${(t.type||t.direction||"")}">${(t.type||t.direction||"")}</span>
             <span class="badge ${t.status}">${t.status}</span>
             <span style="font-family:var(--mono);color:${(t.pnl||0)>=0?'var(--green)':'var(--red)'}">${(t.pnl||0)>=0?'+':''}$${Math.abs(t.pnl||0).toFixed(2)}</span>
           </div>`).join('')}
@@ -2612,7 +2612,7 @@ function clearForm(){['f-sym','f-en','f-sl','f-tp','f-ex','f-lo','f-pr','f-no','
 function exportCSV(){
   if(!trades.length){toast('No trades to export','err');return;}
   const h=['date','symbol','market','direction','entry','sl','tp','exit','lots','profit','rr','risk_pct','grade','emotion','status','notes'];
-  const rows=trades.map(t=>{const c=calc(t);return[(t.open_time||'').slice(0,10),t.symbol,t.market,t.direction,t.entry_price,t.stop_loss||'',t.take_profit||'',t.exit_price||'',t.lots,t.profit||'',c.rr.toFixed(3),c.rp.toFixed(2),t.grade||'',t.emotion||'',c.status,'"'+(t.notes||'').replace(/"/g,"'")+'"'].join(',');});
+  const rows=trades.map(t=>{const c=calc(t);return[(t.open_time||'').slice(0,10),t.symbol,(t.market||t.symbol||""),(t.type||t.direction||""),t.entry_price,t.stop_loss||'',t.take_profit||'',t.exit_price||'',t.lots,t.profit||'',c.rr.toFixed(3),c.rp.toFixed(2),t.grade||'',t.emotion||'',c.status,'"'+(t.notes||'').replace(/"/g,"'")+'"'].join(',');});
   const url=URL.createObjectURL(new Blob([[h.join(','),...rows].join('\n')],{type:'text/csv'}));
   const a=document.createElement('a');a.href=url;a.download='trades_'+new Date().toISOString().slice(0,10)+'.csv';a.click();URL.revokeObjectURL(url);toast('CSV exported','ok');
 }
