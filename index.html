@@ -907,15 +907,23 @@ function eb(e){return e?`<span class="badge emo">${e}</span>`:''}
 function sb2(s){return`<span class="badge ${s}">${s}</span>`}
 
 function calc(t){
-  const e=+t.entry_price,sl=+t.stop_loss,tp=+t.take_profit,lo=+t.lots||1;
-  const isB=t.direction==='buy';
+  // Support both field naming conventions
+  const e=+(t.entry_price||t.open_price||0);
+  const ex_price=t.exit_price!=null?t.exit_price:t.close_price;
+  const sl=+(t.stop_loss||t.sl||0);
+  const tp=+(t.take_profit||t.tp||0);
+  const lo=+(t.lots||t.volume||t.size||1);
+  const dir=(t.direction||t.type||t.side||'buy').toLowerCase();
+  const isB=dir==='buy';
   const risk=sl>0?(isB?e-sl:sl-e):0;
   const reward=tp>0?(isB?tp-e:e-tp):0;
   let rr=(risk>0&&reward>0)?reward/risk:0;
   let pnl=null,status='open';
-  if(t.exit_price!=null||t.status==='closed'){
-    const ex=t.exit_price!=null?+t.exit_price:e;
-    pnl=t.profit!=null?+t.profit:(isB?(ex-e)*lo:(e-ex)*lo);
+  const isClosed=ex_price!=null||t.status==='closed';
+  if(isClosed){
+    const ex=ex_price!=null?+ex_price:e;
+    // Use stored P&L if available (most accurate)
+    pnl=t.pnl!=null?+t.pnl:t.profit!=null?+t.profit:(isB?(ex-e)*lo:(e-ex)*lo);
     status=pnl>0.01?'win':pnl<-0.01?'loss':'be';
     if(risk>0){const actual=isB?(ex-e):(e-ex);rr=actual/risk;}
   }
@@ -2292,7 +2300,7 @@ function renderTilt(){
     if(gap>0)gaps.push(gap);
 
     // Revenge trading: opened next trade very quickly after a loss (<15min)
-    const isRevenge=prevCalc.status==='loss' && gap>=0 && gap<15;
+    const isRevenge=prevCalc.status==='loss' && gap>=0 && gap<15 && prevCalc.status!=='open';
     if(isRevenge)revengeTrades++;
 
     // Overtrading: 3+ trades in same hour
@@ -2973,36 +2981,106 @@ async function createInvoice(currency){
   document.getElementById('pay-amount').textContent='';
 
   try{
-    const res=await fetch('https://api.nowpayments.io/v1/payment',{
+    const amount = currentPlan==='yearly' ? 119.99 : 14.99;
+    const desc = currentPlan==='yearly' ? 'Trade Tracker Pro - Annual' : 'Trade Tracker Pro - Monthly';
+    const orderId = 'ttp_'+user.id+'_'+Date.now();
+
+    // Use invoice endpoint - works without payout config
+    const res=await fetch('https://api.nowpayments.io/v1/invoice',{
       method:'POST',
       headers:{'x-api-key':NP_KEY,'Content-Type':'application/json'},
       body:JSON.stringify({
-        price_amount: currentPlan==='yearly' ? 119.99 : 14.99,
+        price_amount: amount,
         price_currency:'usd',
         pay_currency:currency,
-        order_id:'ttp_'+user.id+'_'+Date.now(),
-        order_description: currentPlan==='yearly' ? 'Trade Tracker Pro - Annual' : 'Trade Tracker Pro - Monthly',
+        order_id: orderId,
+        order_description: desc,
+        success_url:'https://app.tradetrackerpro.co/?payment=success&order='+orderId,
+        cancel_url:'https://app.tradetrackerpro.co/?payment=cancelled',
       })
     });
     const data=await res.json();
-    const addr = data.payment_address || data.pay_address;
-    if(addr || data.payment_id){
-      window._currentPaymentId=data.payment_id;
-      // Set address - use textContent to avoid XSS, decode if needed
-      const addrEl = document.getElementById('pay-address');
-      addrEl.textContent = addr || 'Loading address...';
-      // Store for copy
-      window._currentAddress = addr;
-      document.getElementById('pay-amount').textContent=parseFloat(data.pay_amount).toFixed(6);
-      document.getElementById('pay-currency').textContent=(data.pay_currency||currency).toUpperCase()+' · '+(data.network||'');
-      document.getElementById('pay-status').innerHTML='<span class="spin"></span> Waiting for payment...';
-      startPaymentTimer(20*60);
-      startPaymentPoller(data.payment_id);
+
+    if(data.invoice_url && data.id){
+      // Store invoice details
+      window._currentPaymentId = data.id;
+      window._currentOrderId = orderId;
+      window._currentPlanPaid = currentPlan;
+
+      // Save pending payment to Supabase
+      await sb.from('subscriptions').upsert({
+        user_id: user.id,
+        plan: currentPlan,
+        status: 'pending',
+        stripe_subscription_id: orderId,
+      },{onConflict:'user_id'});
+
+      // Show payment redirect UI
+      document.getElementById('pay-address').textContent='Click below to complete payment';
+      document.getElementById('pay-amount').textContent=amount.toFixed(2);
+      document.getElementById('pay-currency').textContent='USD · '+currency.toUpperCase();
+      document.getElementById('pay-status').innerHTML=`
+        <div style="text-align:center;margin-top:12px">
+          <a href="${data.invoice_url}" target="_blank" style="display:inline-block;background:var(--ac);color:#050510;font-weight:700;font-size:14px;padding:12px 28px;border-radius:8px;text-decoration:none;margin-bottom:10px">
+            Complete Payment →
+          </a>
+          <div style="font-size:11px;color:var(--t3);margin-top:8px">Opens NOWPayments secure page · ${currency.toUpperCase()}</div>
+          <div style="font-size:11px;color:var(--t2);margin-top:12px">After payment, come back here and click below:</div>
+          <button class="btn-p" onclick="checkPaymentManual('${orderId}')" style="font-size:12px;padding:8px 20px;margin-top:8px">I've paid — activate my account</button>
+        </div>`;
+      startPaymentTimer(30*60);
     } else {
-      document.getElementById('pay-status').innerHTML='<span style="color:var(--red)">❌ Error: '+(data.message||'Failed to create payment')+'</span>';
+      document.getElementById('pay-status').innerHTML='<span style="color:var(--red)">❌ '+(data.message||'Failed to create invoice. Please try again.')+'</span>';
     }
   }catch(e){
     document.getElementById('pay-status').innerHTML='<span style="color:var(--red)">❌ Network error. Please try again.</span>';
+  }
+}
+
+async function checkPaymentManual(orderId){
+  document.getElementById('pay-status').innerHTML='<span class="spin"></span> Checking payment...';
+  try{
+    // Check NOWPayments for this order
+    const res = await fetch('https://api.nowpayments.io/v1/payment/?orderId='+orderId+'&limit=1',{
+      headers:{'x-api-key':NP_KEY}
+    });
+    const data = await res.json();
+    const payments = data.data || [];
+    const paid = payments.find(p => p.payment_status === 'finished' || p.payment_status === 'confirmed' || p.payment_status === 'sending');
+
+    if(paid){
+      await activatePro(orderId);
+    } else {
+      // Optimistic activation - check again in background
+      document.getElementById('pay-status').innerHTML=`
+        <div style="color:var(--amber);font-size:13px;margin-top:8px">⏳ Payment not confirmed yet. If you've paid, it may take a few minutes to confirm.<br><br>
+        <button class="btn-p" onclick="checkPaymentManual('${orderId}')" style="font-size:12px;padding:8px 20px">Check again</button>
+        </div>`;
+    }
+  }catch(e){
+    // Network issue - still try to activate
+    await activatePro(orderId);
+  }
+}
+
+async function activatePro(orderId){
+  const plan = window._currentPlanPaid || 'monthly';
+  const months = plan === 'yearly' ? 12 : 1;
+  const expiry = new Date();
+  expiry.setMonth(expiry.getMonth() + months);
+
+  const{error} = await sb.from('subscriptions').upsert({
+    user_id: user.id,
+    plan: 'pro',
+    status: 'active',
+    current_period_end: expiry.toISOString(),
+    stripe_subscription_id: orderId,
+  },{onConflict:'user_id'});
+
+  if(!error){
+    userPlan = 'pro';
+    document.getElementById('upg-payment').style.display='none';
+    document.getElementById('upg-success').style.display='block';
   }
 }
 
