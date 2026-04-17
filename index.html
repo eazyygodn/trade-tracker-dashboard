@@ -3008,7 +3008,7 @@ async function createInvoice(currency){
       window._currentPlanPaid = currentPlan;
 
       // Save pending payment to Supabase
-      await sb.from('subscriptions').upsert({
+      if(user) await sb.from('subscriptions').upsert({
         user_id: user.id,
         plan: currentPlan,
         status: 'pending',
@@ -3069,6 +3069,7 @@ async function activatePro(orderId){
   const expiry = new Date();
   expiry.setMonth(expiry.getMonth() + months);
 
+  if(!user){toast('Please log in first','err');return;}
   const{error} = await sb.from('subscriptions').upsert({
     user_id: user.id,
     plan: 'pro',
