@@ -2983,7 +2983,7 @@ async function createInvoice(currency){
   try{
     const amount = currentPlan==='yearly' ? 119.99 : 14.99;
     const desc = currentPlan==='yearly' ? 'Trade Tracker Pro - Annual' : 'Trade Tracker Pro - Monthly';
-    const orderId = 'ttp_'+user.id+'_'+Date.now();
+    const orderId = 'ttp_'+(user?.id||'anon')+'_'+Date.now();
 
     // Use invoice endpoint - works without payout config
     const res=await fetch('https://api.nowpayments.io/v1/invoice',{
