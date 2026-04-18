@@ -1694,22 +1694,13 @@ function renderUpgrade(){
         <div style="padding:16px 20px;border-bottom:1px solid var(--b1)">
           <div style="font-size:12px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.8px">What's included in Pro</div>
         </div>
-        ${[
-          ['⚡','Unlimited trades','No limits — sync as many as you want'],
-          ['📈','Full analytics suite','Session, hourly, drawdown, equity curve'],
-          ['🧠','AI Trading Coach','Rule-based analysis of your real data'],
-          ['📋','Playbooks','Track every setup strategy'],
-          ['🎯','Risk of Ruin simulator','Know your edge before scaling'],
-          ['📷','Screenshot uploads','Chart images on every trade'],
-          ['💼','Multiple accounts','Manage prop firm + personal accounts'],
-          ['📥','CSV import','Switch from TradeZella, Notion, MT5, Myfxbook'],
-          ['💬','Priority support','Faster replies from our team'],
-        ].map(([icon,title,desc])=>`
-          <div style="display:flex;align-items:center;gap:14px;padding:12px 20px;border-bottom:1px solid var(--b0)">
-            <span style="font-size:18px;width:26px;text-align:center">${icon}</span>
-            <div><div style="font-size:13px;font-weight:600">${title}</div><div style="font-size:11px;color:var(--t2);margin-top:1px">${desc}</div></div>
-            <span style="margin-left:auto;color:var(--green);font-weight:700">✓</span>
-          </div>`).join('')}
+          <div style="display:flex;align-items:center;gap:14px;padding:10px 20px;border-bottom:1px solid var(--b0)"><span style="font-size:18px">⚡</span><div><div style="font-size:13px;font-weight:600;color:var(--t1)">Unlimited trades</div><div style="font-size:11px;color:var(--t3)">No limits — sync as many as you want</div></div></div>
+          <div style="display:flex;align-items:center;gap:14px;padding:10px 20px;border-bottom:1px solid var(--b0)"><span style="font-size:18px">📈</span><div><div style="font-size:13px;font-weight:600;color:var(--t1)">Full analytics suite</div><div style="font-size:11px;color:var(--t3)">Session, hourly, drawdown, equity curve</div></div></div>
+          <div style="display:flex;align-items:center;gap:14px;padding:10px 20px;border-bottom:1px solid var(--b0)"><span style="font-size:18px">🧠</span><div><div style="font-size:13px;font-weight:600;color:var(--t1)">AI Trading Coach</div><div style="font-size:11px;color:var(--t3)">Rule-based analysis of your real data</div></div></div>
+          <div style="display:flex;align-items:center;gap:14px;padding:10px 20px;border-bottom:1px solid var(--b0)"><span style="font-size:18px">📋</span><div><div style="font-size:13px;font-weight:600;color:var(--t1)">Playbooks</div><div style="font-size:11px;color:var(--t3)">Track every setup strategy</div></div></div>
+          <div style="display:flex;align-items:center;gap:14px;padding:10px 20px;border-bottom:1px solid var(--b0)"><span style="font-size:18px">🎯</span><div><div style="font-size:13px;font-weight:600;color:var(--t1)">Risk of Ruin simulator</div><div style="font-size:11px;color:var(--t3)">Know your edge before scaling</div></div></div>
+          <div style="display:flex;align-items:center;gap:14px;padding:10px 20px;border-bottom:1px solid var(--b0)"><span style="font-size:18px">📥</span><div><div style="font-size:13px;font-weight:600;color:var(--t1)">CSV import</div><div style="font-size:11px;color:var(--t3)">Switch from TradeZella, Notion, MT5, Myfxbook</div></div></div>
+          <div style="display:flex;align-items:center;gap:14px;padding:10px 20px;border-bottom:1px solid var(--b0)"><span style="font-size:18px">💬</span><div><div style="font-size:13px;font-weight:600;color:var(--t1)">Priority support</div><div style="font-size:11px;color:var(--t3)">Faster replies from our team</div></div></div>
       </div>
 
       <p style="text-align:center;font-size:12px;color:var(--t3);line-height:1.8">
@@ -3219,18 +3210,30 @@ if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded"
 
         <!-- Features -->
         <div style="margin-bottom:18px">
-          ${[
-            ['Unlimited trades','No 20-trade cap ever'],
-            ['Deep analytics','Sessions, equity, drawdown, hourly P&L'],
-            ['AI trading coach','Spots patterns in your real data'],
-            ['Playbooks & strategies','Win rate & P&L per setup'],
-            ['MT4/MT5 auto-sync','Every trade synced in seconds'],
-            ['Priority support','We reply within 24 hours'],
-          ].map(([f,d])=>`
             <div style="display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid var(--b0)">
               <span style="color:var(--green);font-size:14px;margin-top:1px;flex-shrink:0">✓</span>
-              <div><div style="font-size:13px;color:var(--t1);font-weight:500">${f}</div><div style="font-size:11px;color:var(--t3);margin-top:1px">${d}</div></div>
-            </div>`).join('')}
+              <div><div style="font-size:13px;color:var(--t1);font-weight:500">Unlimited trades</div><div style="font-size:11px;color:var(--t3);margin-top:1px">No 20-trade cap ever</div></div>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid var(--b0)">
+              <span style="color:var(--green);font-size:14px;margin-top:1px;flex-shrink:0">✓</span>
+              <div><div style="font-size:13px;color:var(--t1);font-weight:500">Deep analytics</div><div style="font-size:11px;color:var(--t3);margin-top:1px">Sessions, equity, drawdown, hourly P&L</div></div>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid var(--b0)">
+              <span style="color:var(--green);font-size:14px;margin-top:1px;flex-shrink:0">✓</span>
+              <div><div style="font-size:13px;color:var(--t1);font-weight:500">AI trading coach</div><div style="font-size:11px;color:var(--t3);margin-top:1px">Spots patterns in your real data</div></div>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid var(--b0)">
+              <span style="color:var(--green);font-size:14px;margin-top:1px;flex-shrink:0">✓</span>
+              <div><div style="font-size:13px;color:var(--t1);font-weight:500">Playbooks & strategies</div><div style="font-size:11px;color:var(--t3);margin-top:1px">Win rate &amp; P&amp;L per setup</div></div>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid var(--b0)">
+              <span style="color:var(--green);font-size:14px;margin-top:1px;flex-shrink:0">✓</span>
+              <div><div style="font-size:13px;color:var(--t1);font-weight:500">MT4/MT5 auto-sync</div><div style="font-size:11px;color:var(--t3);margin-top:1px">Every trade synced in seconds</div></div>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid var(--b0)">
+              <span style="color:var(--green);font-size:14px;margin-top:1px;flex-shrink:0">✓</span>
+              <div><div style="font-size:13px;color:var(--t1);font-weight:500">Priority support</div><div style="font-size:11px;color:var(--t3);margin-top:1px">We reply within 24 hours</div></div>
+            </div>
         </div>
 
         <!-- Terms agreement -->
