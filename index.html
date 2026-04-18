@@ -1083,17 +1083,12 @@ function renderOverview(){
 
   <!-- QUICK ACTIONS -->
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px">
-    ${[
-      {label:'📊 Analytics',desc:'Deep performance reports',page:'analytics'},
-      {label:'📋 Playbooks',desc:'Track your setups',page:'playbooks'},
-      {label:'🧠 Tilt Meter',desc:'Psychology score',page:'tilt'},
-      {label:'🎯 Risk of Ruin',desc:'Simulate your edge',page:'ror'},
-      {label:'📅 Calendar',desc:'Daily P&L view',page:'calendar'},
-      {label:'⚡ Setup Guide',desc:'Connect MT4/MT5',page:'setup'},
-    ].map(a=>`<div onclick="go('${a.page}',null)" style="background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);padding:14px 16px;cursor:pointer;transition:.15s" onmouseover="this.style.borderColor='var(--b2)';this.style.background='var(--s2)'" onmouseout="this.style.borderColor='var(--b1)';this.style.background='var(--s1)'">
-      <div style="font-size:14px;font-weight:600;margin-bottom:4px">${a.label}</div>
-      <div style="font-size:11px;color:var(--t2)">${a.desc}</div>
-    </div>`).join('')}
+    <div onclick="go('analytics',null)" style="background:var(--s1);border:1px solid var(--b1);border-radius:9px;padding:12px;cursor:pointer;transition:.15s" onmouseover="this.style.borderColor='var(--ac-bdr)'" onmouseout="this.style.borderColor='var(--b1)'"><div style="font-size:13px;font-weight:600;color:var(--t1)">📊 Analytics</div><div style="font-size:11px;color:var(--t3);margin-top:3px">Deep performance reports</div></div>
+    <div onclick="go('playbooks',null)" style="background:var(--s1);border:1px solid var(--b1);border-radius:9px;padding:12px;cursor:pointer;transition:.15s" onmouseover="this.style.borderColor='var(--ac-bdr)'" onmouseout="this.style.borderColor='var(--b1)'"><div style="font-size:13px;font-weight:600;color:var(--t1)">📋 Playbooks</div><div style="font-size:11px;color:var(--t3);margin-top:3px">Strategy tracking</div></div>
+    <div onclick="go('ror',null)" style="background:var(--s1);border:1px solid var(--b1);border-radius:9px;padding:12px;cursor:pointer;transition:.15s" onmouseover="this.style.borderColor='var(--ac-bdr)'" onmouseout="this.style.borderColor='var(--b1)'"><div style="font-size:13px;font-weight:600;color:var(--t1)">🎯 Risk of Ruin</div><div style="font-size:11px;color:var(--t3);margin-top:3px">Expectancy simulator</div></div>
+    <div onclick="go('ai',null)" style="background:var(--s1);border:1px solid var(--b1);border-radius:9px;padding:12px;cursor:pointer;transition:.15s" onmouseover="this.style.borderColor='var(--ac-bdr)'" onmouseout="this.style.borderColor='var(--b1)'"><div style="font-size:13px;font-weight:600;color:var(--t1)">🧠 AI Coach</div><div style="font-size:11px;color:var(--t3);margin-top:3px">Ask about your trades</div></div>
+    <div onclick="go('calendar',null)" style="background:var(--s1);border:1px solid var(--b1);border-radius:9px;padding:12px;cursor:pointer;transition:.15s" onmouseover="this.style.borderColor='var(--ac-bdr)'" onmouseout="this.style.borderColor='var(--b1)'"><div style="font-size:13px;font-weight:600;color:var(--t1)">📅 Calendar</div><div style="font-size:11px;color:var(--t3);margin-top:3px">Monthly P&L heatmap</div></div>
+    <div onclick="go('import',null)" style="background:var(--s1);border:1px solid var(--b1);border-radius:9px;padding:12px;cursor:pointer;transition:.15s" onmouseover="this.style.borderColor='var(--ac-bdr)'" onmouseout="this.style.borderColor='var(--b1)'"><div style="font-size:13px;font-weight:600;color:var(--t1)">📥 Import</div><div style="font-size:11px;color:var(--t3);margin-top:3px">Import from CSV</div></div>
   </div>`;
 }
 
@@ -1288,33 +1283,48 @@ function renderImport(){
 
       <!-- PLATFORM GUIDES -->
       <div style="margin-bottom:20px" id="platform-guides">
-        ${[
-          {name:'TradeZella',icon:'📊',steps:['Go to the <strong>Trades</strong> tab in the left menu','Click the checkbox at the top to <strong>select all trades</strong>','Click <strong>Bulk Actions</strong> button (top right of table)','Choose <strong>Export trades to CSV</strong>','In the popup — click <strong>Select All</strong> to include all columns','Click <strong>Download Trades</strong> — file saves to your Downloads folder','Come back here and drop the file in the box below']},
-          {name:'MT5 History',icon:'🖥️',steps:['Open MT5 → click the <strong>History</strong> tab at the bottom','Right-click anywhere in the history table','Select <strong>Save as Report</strong> or <strong>Save as Detailed Report</strong>','Choose location and save as <strong>.csv</strong> or <strong>.htm</strong>','Drop the file below — we handle both formats']},
-          {name:'Myfxbook',icon:'📉',steps:['Log in to <strong>myfxbook.com</strong>','Go to your account → click <strong>Statement</strong>','Click <strong>Export</strong> → select <strong>CSV</strong> format','Download the file and drop it below']},
-          {name:'Tradervue',icon:'📈',steps:['Log in to <strong>tradervue.com</strong>','Go to <strong>Trades</strong> in the top menu','Click <strong>Export</strong> (top right)','Select date range → click <strong>Download CSV</strong>','Drop the file below']},
-          {name:'Edgewonk',icon:'📋',steps:['Open <strong>Edgewonk</strong> → go to <strong>Trading Journal</strong>','Click <strong>Export</strong> in the top menu','Choose <strong>CSV</strong> format → download','Drop the file below']},
-          {name:'Notion',icon:'📝',steps:['Open your Notion <strong>trading database</strong>','Click the <strong>···</strong> menu (top right of the page)','Select <strong>Export</strong>','Choose <strong>CSV</strong> as the format','Click <strong>Export</strong> — file saves to your Downloads folder','Drop the file below — we will map your columns automatically']},
-          {name:'Excel / Google Sheets',icon:'📄',steps:['Make sure your spreadsheet has these columns: <strong>Date, Symbol, Direction (buy/sell), Entry Price, Exit Price, P&L</strong>','In Excel: <strong>File → Save As → CSV</strong>','In Google Sheets: <strong>File → Download → CSV</strong>','Drop the file below']},
-        ].map((p,idx)=>`
-          <div style="background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);margin-bottom:6px;overflow:hidden">
-            <div onclick="toggleGuide(${idx})" style="padding:14px 18px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:.15s" onmouseover="this.style.background='var(--s2)'" onmouseout="this.style.background='transparent'">
-              <div style="display:flex;align-items:center;gap:12px">
-                <span style="font-size:20px">${p.icon}</span>
-                <span style="font-size:14px;font-weight:700">${p.name}</span>
-              </div>
-              <span id="guide-arrow-${idx}" style="color:var(--t3);font-size:12px;transition:.2s">▼</span>
-            </div>
-            <div id="guide-${idx}" style="display:none;padding:0 18px 16px;border-top:1px solid var(--b1)">
-              <div style="padding-top:14px">
-                ${p.steps.map((step,i)=>`
-                  <div style="display:flex;gap:12px;margin-bottom:10px;align-items:flex-start">
-                    <div style="width:22px;height:22px;border-radius:50%;background:var(--ac-dim);border:1px solid var(--ac-bdr);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--ac);flex-shrink:0;margin-top:1px">${i+1}</div>
-                    <div style="font-size:13px;color:var(--t2);line-height:1.6">${step}</div>
-                  </div>`).join('')}
-              </div>
-            </div>
-          </div>`).join('')}
+        <div style="background:var(--s1);border:1px solid var(--b1);border-radius:9px;padding:14px;margin-bottom:10px">
+            <div style="font-size:13px;font-weight:700;color:var(--t1);margin-bottom:8px">📊 TradeZella</div>
+            <ol style="margin:0;padding-left:18px;color:var(--t2);font-size:12px;line-height:1.8">
+              <li>Go to the <strong>Trades</strong> tab in the left sidebar</li><li>Click <strong>Export</strong> (top right) → select <strong>CSV</strong></li><li>Upload the downloaded file below</li>
+            </ol>
+          </div>
+          <div style="background:var(--s1);border:1px solid var(--b1);border-radius:9px;padding:14px;margin-bottom:10px">
+            <div style="font-size:13px;font-weight:700;color:var(--t1);margin-bottom:8px">📈 Tradervue</div>
+            <ol style="margin:0;padding-left:18px;color:var(--t2);font-size:12px;line-height:1.8">
+              <li>Log in → click <strong>Trades</strong> in the top menu</li><li>Click <strong>Export</strong> → choose <strong>CSV</strong></li><li>Upload the downloaded file below</li>
+            </ol>
+          </div>
+          <div style="background:var(--s1);border:1px solid var(--b1);border-radius:9px;padding:14px;margin-bottom:10px">
+            <div style="font-size:13px;font-weight:700;color:var(--t1);margin-bottom:8px">📉 Myfxbook</div>
+            <ol style="margin:0;padding-left:18px;color:var(--t2);font-size:12px;line-height:1.8">
+              <li>Open your account → click <strong>Advanced</strong> tab</li><li>Scroll down → click <strong>Export to CSV</strong></li><li>Upload the downloaded file below</li>
+            </ol>
+          </div>
+          <div style="background:var(--s1);border:1px solid var(--b1);border-radius:9px;padding:14px;margin-bottom:10px">
+            <div style="font-size:13px;font-weight:700;color:var(--t1);margin-bottom:8px">🖥️ MT5 History</div>
+            <ol style="margin:0;padding-left:18px;color:var(--t2);font-size:12px;line-height:1.8">
+              <li>In MT5 open <strong>View → Terminal → Account History</strong></li><li>Right-click → <strong>Save as Report</strong> → choose CSV</li><li>Upload the downloaded file below</li>
+            </ol>
+          </div>
+          <div style="background:var(--s1);border:1px solid var(--b1);border-radius:9px;padding:14px;margin-bottom:10px">
+            <div style="font-size:13px;font-weight:700;color:var(--t1);margin-bottom:8px">🖥️ MT4 History</div>
+            <ol style="margin:0;padding-left:18px;color:var(--t2);font-size:12px;line-height:1.8">
+              <li>In MT4 open <strong>View → Terminal → Account History</strong></li><li>Right-click → <strong>Save as Report</strong> → CSV format</li><li>Upload the downloaded file below</li>
+            </ol>
+          </div>
+          <div style="background:var(--s1);border:1px solid var(--b1);border-radius:9px;padding:14px;margin-bottom:10px">
+            <div style="font-size:13px;font-weight:700;color:var(--t1);margin-bottom:8px">📄 Generic CSV</div>
+            <ol style="margin:0;padding-left:18px;color:var(--t2);font-size:12px;line-height:1.8">
+              <li>Export your trades from any platform as CSV</li><li>Required columns: symbol, direction, entry, exit, P&amp;L, date</li><li>Upload the file below — we auto-detect the format</li>
+            </ol>
+          </div>
+          <div style="background:var(--s1);border:1px solid var(--b1);border-radius:9px;padding:14px;margin-bottom:10px">
+            <div style="font-size:13px;font-weight:700;color:var(--t1);margin-bottom:8px">📋 Notion / Excel</div>
+            <ol style="margin:0;padding-left:18px;color:var(--t2);font-size:12px;line-height:1.8">
+              <li>Export your spreadsheet as <strong>CSV</strong></li><li>Make sure columns include: date, symbol, buy/sell, price, P&amp;L</li><li>Upload the downloaded file below</li>
+            </ol>
+
       </div>
 
       <!-- UPLOAD AREA -->
@@ -3294,18 +3304,36 @@ if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded"
     <div id="coin-select" style="display:none;padding:0 32px 32px">
       <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--t2)">Choose payment coin:</div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
-        ${[
-          {id:'usdttrc20',name:'USDT',net:'TRC20',icon:'💵'},
-          {id:'usdterc20',name:'USDT',net:'ERC20',icon:'💵'},
-          {id:'btc',name:'BTC',net:'Bitcoin',icon:'₿'},
-          {id:'eth',name:'ETH',net:'Ethereum',icon:'Ξ'},
-          {id:'ltc',name:'LTC',net:'Litecoin',icon:'Ł'},
-          {id:'trx',name:'TRX',net:'TRON',icon:'⚡'},
-        ].map(c=>`<div onclick="createInvoice('${c.id}')" style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:12px;text-align:center;cursor:pointer;transition:.15s" onmouseover="this.style.borderColor='var(--ac-bdr)'" onmouseout="this.style.borderColor='var(--b1)'">
-          <div style="font-size:20px;margin-bottom:4px">${c.icon}</div>
-          <div style="font-size:12px;font-weight:700">${c.name}</div>
-          <div style="font-size:9px;color:var(--t3)">${c.net}</div>
-        </div>`).join('')}
+        <div onclick="createInvoice('usdttrc20')" style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:12px;text-align:center;cursor:pointer;transition:.15s" onmouseover="this.style.borderColor='var(--ac-bdr)'" onmouseout="this.style.borderColor='var(--b1)'">
+          <div style="font-size:20px;margin-bottom:4px">💵</div>
+          <div style="font-size:12px;font-weight:700">USDT</div>
+          <div style="font-size:9px;color:var(--t3)">TRC20</div>
+        </div>
+        <div onclick="createInvoice('usdterc20')" style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:12px;text-align:center;cursor:pointer;transition:.15s" onmouseover="this.style.borderColor='var(--ac-bdr)'" onmouseout="this.style.borderColor='var(--b1)'">
+          <div style="font-size:20px;margin-bottom:4px">💵</div>
+          <div style="font-size:12px;font-weight:700">USDT</div>
+          <div style="font-size:9px;color:var(--t3)">ERC20</div>
+        </div>
+        <div onclick="createInvoice('btc')" style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:12px;text-align:center;cursor:pointer;transition:.15s" onmouseover="this.style.borderColor='var(--ac-bdr)'" onmouseout="this.style.borderColor='var(--b1)'">
+          <div style="font-size:20px;margin-bottom:4px">₿</div>
+          <div style="font-size:12px;font-weight:700">BTC</div>
+          <div style="font-size:9px;color:var(--t3)">Bitcoin</div>
+        </div>
+        <div onclick="createInvoice('eth')" style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:12px;text-align:center;cursor:pointer;transition:.15s" onmouseover="this.style.borderColor='var(--ac-bdr)'" onmouseout="this.style.borderColor='var(--b1)'">
+          <div style="font-size:20px;margin-bottom:4px">Ξ</div>
+          <div style="font-size:12px;font-weight:700">ETH</div>
+          <div style="font-size:9px;color:var(--t3)">Ethereum</div>
+        </div>
+        <div onclick="createInvoice('ltc')" style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:12px;text-align:center;cursor:pointer;transition:.15s" onmouseover="this.style.borderColor='var(--ac-bdr)'" onmouseout="this.style.borderColor='var(--b1)'">
+          <div style="font-size:20px;margin-bottom:4px">Ł</div>
+          <div style="font-size:12px;font-weight:700">LTC</div>
+          <div style="font-size:9px;color:var(--t3)">Litecoin</div>
+        </div>
+        <div onclick="createInvoice('trx')" style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:12px;text-align:center;cursor:pointer;transition:.15s" onmouseover="this.style.borderColor='var(--ac-bdr)'" onmouseout="this.style.borderColor='var(--b1)'">
+          <div style="font-size:20px;margin-bottom:4px">⚡</div>
+          <div style="font-size:12px;font-weight:700">TRX</div>
+          <div style="font-size:9px;color:var(--t3)">TRON</div>
+        </div>
       </div>
     </div>
   </div>
