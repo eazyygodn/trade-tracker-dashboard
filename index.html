@@ -2557,12 +2557,14 @@ function copyText(text,fbId){
   navigator.clipboard.writeText(text).then(()=>{const el=document.getElementById(fbId);if(el){el.style.display='inline';setTimeout(()=>el.style.display='none',2500);}}).catch(()=>toast('Select and copy manually','err'));
 }
 function go(t,el){
+  // Intercept upgrade - show payment modal instead of page
+  if(t==='upgrade'){showUpgrade();return;}
   tab=t;selId=null;
   document.getElementById('detail-panel').style.display='none';
   document.querySelectorAll('.sb-a').forEach(b=>b.classList.remove('active'));
   if(el)el.classList.add('active');
   document.getElementById('page-title').textContent=TITLES[t]||t;
-  ['overview','trades','upgrade','import','journal','analytics','calendar','daily','weekly','ror','playbooks','tilt','apikeys','setup','support','ai'].forEach(v=>{const el=document.getElementById('tab-'+v);el.style.display=v===t?'block':'none';});
+  ['overview','trades','import','journal','analytics','calendar','daily','weekly','ror','playbooks','tilt','apikeys','setup','support','ai'].forEach(v=>{const el=document.getElementById('tab-'+v);el.style.display=v===t?'block':'none';});
   const showTop=['trades','daily','weekly','analytics'].includes(t);
   document.getElementById('goals-sec').style.display=showTop?'block':'none';
   document.getElementById('stats-grid').style.display=showTop?'grid':'none';
